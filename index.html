@@ -11,6 +11,38 @@
 </head>
 
 <body>
+
+    <!-- query to take input of number of players -->
+    <!-- this is to be rendered before main so -->
+
+    <div id="playerSelectionModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Select Number of Players</h2>
+            <p class="modal-subtitle">How many players will play?</p>
+            <div class="player-selector">
+                <button class="player-btn" data-players="2">
+                    <span class="player-btn-number">2</span>
+                    <span class="player-btn-label">Players</span>
+                </button>
+                <button class="player-btn" data-players="3">
+                    <span class="player-btn-number">3</span>
+                    <span class="player-btn-label">Players</span>
+                </button>
+                <button class="player-btn" data-players="4">
+                    <span class="player-btn-number">4</span>
+                    <span class="player-btn-label">Players</span>
+                </button>
+                <button class="player-btn" data-players="5">
+                    <span class="player-btn-number">5</span>
+                    <span class="player-btn-label">Players</span>
+                </button>
+                <button class="player-btn" data-players="6">
+                    <span class="player-btn-number">6</span>
+                    <span class="player-btn-label">Players</span>
+                </button>
+            </div>
+        </div>
+    </div>
     <main class="page">
         <div id="transitionFx" aria-live="polite" aria-atomic="true">
             <span class="rocket-mark" aria-hidden="true">></span>

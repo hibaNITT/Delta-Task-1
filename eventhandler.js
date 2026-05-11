@@ -1,10 +1,31 @@
 import { createInitialState } from "./state_manager.js";
 import { playSound } from "./soundmanager.js";
 
-// ========== GAME STATE AND SETUP ==========
+// GAME STATE AND SETUP\
 
-// Create the initial game state when the page loads
-const state = createInitialState();
+// IMPORTANT: Game state is NOW DELAYED until player selection
+// Previously: const state = createInitialState(); (happened immediately on page load)
+// Now: Player selects count then initializeGame() then state created
+// This allows the modal popup to work properly
+
+// what is modal ?
+
+// A modal is a UI element that appears on top of the main content.
+
+// It usually dims the background and forces the user to interact with it before returning to the page.
+
+// Commonly used for login forms, alerts, or confirmations.
+
+let state = null;
+
+//MULTIPLAYER HELPER FUNCTION
+
+// Function to get the next player in turn order
+// For N players we need to cycle through 1 to N then back to 1
+
+function getNextPlayer(currentPlayer, playerCount) {
+  return (currentPlayer % playerCount) + 1;
+}
 
 // Timer variables - game runs for 10 minutes total
 const GAME_DURATION_SECONDS = 10 * 60; // 10 minutes
@@ -22,23 +43,128 @@ const board = document.getElementById("board");
 const transitionFx = document.getElementById("transitionFx");
 let transitionFxTimeoutId = null;
 
-// ========== CREATE THE BOARD GRID ==========
+//CREATE THE BOARD GRID (delayed until player count selected) 
 
-// Build the game board with 12 rows and 6 columns of cells
-for (let row = 0; row < 12; row = row + 1) {
-  for (let col = 0; col < 6; col = col + 1) {
-    // Create a new cell div element
-    const newCell = document.createElement("div");
-    newCell.className = "cell";
-    newCell.dataset.row = row;
-    newCell.dataset.col = col;
+// Function to initialize the board grid with 12 rows and 6 columns
+// This must be called AFTER player count is selected, not on page load
+// This ensures we have a valid state object before rendering
+function initializeBoardGrid() {
+  // Clear any existing cells first (in case user restarts game)
+  board.innerHTML = "";
 
-    // Add this cell to the game board
-    board.appendChild(newCell);
+  // Build the game board with 12 rows and 6 columns of cells
+  for (let row = 0; row < 12; row = row + 1) {
+    for (let col = 0; col < 6; col = col + 1) {
+      // Create a new cell div element
+      const newCell = document.createElement("div");
+      newCell.className = "cell";
+      newCell.dataset.row = row;
+      newCell.dataset.col = col;
+
+      // Add this cell to the game board
+      board.appendChild(newCell);
+    }
   }
 }
 
-// ========== DISPLAY FUNCTIONS ==========
+//  MODAL AND GAME INITIALIZATION 
+
+// Function to show/hide the player selection modal popup
+//  This centralizes the modal visibility so we can easily show/hide it
+function setPlayerSelectionModal(visible) {
+  const modal = document.getElementById("playerSelectionModal");
+  if (!modal) {
+    console.error("Player selection modal not found in HTML");
+    return;
+  }
+
+  // Display modal as flex overlay (centered) or hide it completely
+  modal.style.display = visible ? "flex" : "none";
+}
+
+// Function to show the player selection modal
+function showPlayerSelectionModal() {
+  setPlayerSelectionModal(true);
+}
+
+// Function to hide the player selection modal
+function hidePlayerSelectionModal() {
+  setPlayerSelectionModal(false);
+}
+
+// Function to initialize the game after player count is selected
+// WHY: Game was starting immediately on page load; now it waits for player selection
+// This function is called when user clicks a player count button
+function initializeGame(playerCount = 2) {
+  // STEP 1: Validate and create game state with selected player count
+  // This initializes scores, penalties, board, etc. for N players
+  try {
+    state = createInitialState(playerCount);
+  } catch (error) {
+    alert("Error: " + error.message);
+    return;
+  }
+
+  // STEP 2: Hide the player selection modal to show the game board
+  hidePlayerSelectionModal();
+
+  // STEP 3: Build the 12x6 board grid with cell divs
+  initializeBoardGrid();
+
+  // STEP 4: Reset all timer variables to starting values
+  timeLeft = GAME_DURATION_SECONDS;
+  moveTimeLeft = MOVE_DURATION_SECONDS;
+  isPaused = false;
+
+  // STEP 5: Render the initial board state and all UI elements
+  renderBoard(state);
+  updatePlayerDisplay();
+  updateSecondWindDisplay();
+
+  // STEP 6: Set up and start both timers (game timer + move timer)
+  updateTimerDisplay();
+  startTimer();
+  updateMoveTimerDisplay();
+  startMoveTimer();
+
+  // STEP 7: Start the Row Ripper animation
+  initRowRipperIndicator();
+
+  // STEP 8: Attach click listener to board so clicks place pieces
+  // Make sure to remove old listener first to avoid double-clicks
+  board.removeEventListener("click", handleBoardClick);
+  board.addEventListener("click", handleBoardClick);
+}
+
+// Function to set up click handlers on all player selection buttons
+// WHY: Buttons need to know when clicked to start the game with selected count
+// This runs when page loads (in DOMContentLoaded event)
+function setupPlayerSelectionButtons() {
+  // Find all buttons with class "player-btn" (2/3/4/5/6 player buttons)
+  const buttons = document.querySelectorAll(".player-btn");
+
+  // Add click event listener to each button
+  buttons.forEach((button) => {
+    button.addEventListener("click", (event) => {
+      // Get the player count from the button's data-players attribute
+      // Example: <button data-players="3"> has value "3"
+      const playerCount = parseInt(
+        event.target.closest(".player-btn").dataset.players,
+      );
+
+      // Validate the number
+      if (playerCount < 2 || playerCount > 6) {
+        alert("Invalid player count. Must be 2-6.");
+        return;
+      }
+
+      // Start the game with this player count
+      initializeGame(playerCount);
+    });
+  });
+}
+
+//   DISPLAY FUNCTIONS  
 
 // Function that redraws the board with current player colors and piece counts
 function renderBoard(currentState) {
@@ -85,7 +211,10 @@ function renderBoard(currentState) {
     // Update the cell display based on piece count
     if (cellData.count > 0) {
       // Determine which player owns this cell
-      const playerClass = cellData.owner === 1 ? "player-1" : "player-2";
+      // dynamically building class name
+      // Instead of hardcoding "player-1" and "player-2", we dynamically get class names
+      // Build the CSS class for this player's pieces (e.g. "player-1")
+      const playerClass = "player-" + cellData.owner;
 
       // Clear old content
       cellElement.innerHTML = "";
@@ -118,7 +247,7 @@ function renderBoard(currentState) {
   updateScoreDisplay(currentState);
 }
 
-// ========== ROW RIPPER POWER-UP LOGIC ==========
+//ROW RIPPER POWER-UP LOGIC 
 
 // Function that activates when an explosion happens on the Row Ripper's current row
 function activateRowRipper(row, currentPlayer) {
@@ -235,7 +364,7 @@ function explodeCell(row, col, currentPlayer, allowTeleport = true) {
   triggerExplosionAt(row, col, currentPlayer, allowTeleport);
 }
 
-// ========== VISUAL EFFECTS ==========
+//   VISUAL EFFECTS  
 
 // Function to show the transportation/teleport effect banner
 function showTransitionEffect(message = "TRANSPORTATON") {
@@ -308,7 +437,7 @@ function showRowRipperEffect(row) {
   }
 }
 
-// ========== SECOND WIND POWER-UP LOGIC ==========
+//   SECOND WIND POWER-UP LOGIC  
 
 // Function to activate Second Wind for a player
 // Gives them 2 extra turns to play
@@ -377,7 +506,7 @@ function deactivateSecondWind() {
   updateSecondWindDisplay();
 }
 
-// ========== FORTRESS CELL POWER-UP LOGIC ==========
+//   FORTRESS CELL POWER-UP LOGIC  
 
 // Function called when a player claims a Fortress Cell
 function activateFortressCell(player, row, col) {
@@ -434,7 +563,7 @@ function displayFortressIndicator(player, row, col) {
   }, 3000);
 }
 
-// ========== GAME LOGIC AND CLICK HANDLER ==========
+//   GAME LOGIC AND CLICK HANDLER  
 
 // Function that handles when a player clicks on a cell
 function handleBoardClick(event) {
@@ -502,10 +631,11 @@ function handleBoardClick(event) {
     updateSecondWindDisplay();
 
     // Check if the new current player can make any moves
+    // MULTIPLAYER: if current player cannot move, check all players or use score-based winner
     if (!canPlayerMove(state.currentPlayer)) {
-      // No moves available - other player wins
-      const winner = state.currentPlayer === 1 ? 2 : 1;
-      endGame(`Game Over! Player ${winner} wins!`);
+      // No moves available - determine winner by highest score
+      // This works for any number of players (2, 3, 4, 5, 6)
+      endGame(determineWinnerMessage());
       return;
     }
 
@@ -527,14 +657,19 @@ function handleTurnSwitch() {
     updateSecondWindDisplay();
 
     if (state.secondWind.chancesLeft === 0) {
-      // Second Wind is used up - switch to other player
-      state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
+      // Second Wind is used up - switch to next player using getNextPlayer
+      // MULTIPLAYER: useing getNextPlayer instead of hardcoded 1/2 ternary operator
+      state.currentPlayer = getNextPlayer(
+        state.currentPlayer,
+        state.playerCount,
+      );
       deactivateSecondWind();
     }
     // If chances left, same player plays again
   } else {
     // No Second Wind or it's inactive - normal turn switch
-    state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
+    // MULTIPLAYER: use getNextPlayer instead of hardcoded 1/2 ternary
+    state.currentPlayer = getNextPlayer(state.currentPlayer, state.playerCount);
   }
 
   // Update the message and turn counter
@@ -545,7 +680,7 @@ function handleTurnSwitch() {
 // Add click listener to the board
 board.addEventListener("click", handleBoardClick);
 
-// ========== DISPLAY UPDATE FUNCTIONS ==========
+//   DISPLAY UPDATE FUNCTIONS  
 
 // Function to update the display showing whose turn it is
 function updatePlayerDisplay() {
@@ -557,44 +692,50 @@ function updatePlayerDisplay() {
 
 // Function to count pieces for each player and update the score display
 function updateScoreDisplay(currentState) {
-  let player1Pieces = 0;
-  let player2Pieces = 0;
+  // MULTIPLAYER: building an object to count pieces per player instead of hardcoded player1/player2- here i am using and array
+  const pieceCountByPlayer = {};
 
   // Count all pieces on the board for each player
   for (let row = 0; row < 12; row = row + 1) {
     for (let col = 0; col < 6; col = col + 1) {
       const cell = currentState.board[row][col];
 
-      if (cell.owner === 1) {
-        player1Pieces = player1Pieces + cell.count;
-      }
-
-      if (cell.owner === 2) {
-        player2Pieces = player2Pieces + cell.count;
+      // If cell has an owner, adding that cell count t the players count to update in array
+      if (cell.owner !== null) {
+        if (!pieceCountByPlayer[cell.owner]) {
+          pieceCountByPlayer[cell.owner] = 0;
+        }
+        pieceCountByPlayer[cell.owner] =
+          pieceCountByPlayer[cell.owner] + cell.count;
       }
     }
   }
 
-  // Store the scores in the game state
-  currentState.scores[1] = player1Pieces;
-  currentState.scores[2] = player2Pieces;
+  // MULTIPLAYER: update scores for all players in the game
+  for (let i = 1; i <= currentState.playerCount; i = i + 1) {
+    currentState.scores[i] = pieceCountByPlayer[i] || 0;
+  }
 
-  // Get timeout penalties (if any player timed out)
-  const player1Penalty = currentState.timeoutPenalties?.[1] || 0;
-  const player2Penalty = currentState.timeoutPenalties?.[2] || 0;
-
-  // Calculate display scores (don't go below 0)
-  const displayScore1 = Math.max(0, player1Pieces - player1Penalty);
-  const displayScore2 = Math.max(0, player2Pieces - player2Penalty);
-
-  // Update the score display element
+  // Build score display text for all players
+  // MULTIPLAYER: loop through all players to build display string
   const scoreElement = document.getElementById("score");
   if (scoreElement) {
-    scoreElement.textContent = `Score - Player 1: ${displayScore1} | Player 2: ${displayScore2}`;
+    let scoreText = "Score - ";
+    const scoreParts = [];
+
+    for (let i = 1; i <= currentState.playerCount; i++) {
+      const rawScore = pieceCountByPlayer[i] || 0;
+      const penalty = currentState.timeoutPenalties?.[i] || 0;
+      const displayScore = Math.max(0, rawScore - penalty);
+      scoreParts.push(`Player ${i}: ${displayScore}`);
+    }
+
+    scoreText = scoreText + scoreParts.join(" | ");
+    scoreElement.textContent = scoreText;
   }
 }
 
-// ========== GAME STATE CHECKING FUNCTIONS ==========
+//   GAME STATE CHECKING FUNCTIONS  
 
 // Function to check if Second Wind should be activated
 // Activates for a player if the other player has 0 score
@@ -610,37 +751,45 @@ function checkAndActivateSecondWind() {
   // Check how many pieces the current player has
   const currentScore = state.scores[state.currentPlayer] || 0;
 
-  // If current player has no pieces, give Second Wind to the other player
+  // If current player has no pieces, give Second Wind to the next player
+  // MULTIPLAYER: use getNextPlayer instead of hardcoded 1/2 ternary
   if (currentScore === 0) {
-    const otherPlayer = state.currentPlayer === 1 ? 2 : 1;
-    activateSecondWind(otherPlayer);
+    const nextPlayer = getNextPlayer(state.currentPlayer, state.playerCount);
+    activateSecondWind(nextPlayer);
   }
 }
 
 // Function to decide the winner when time runs out
 function determineWinnerMessage() {
-  // Get raw scores
-  const rawScore1 = state.scores ? state.scores[1] || 0 : 0;
-  const rawScore2 = state.scores ? state.scores[2] || 0 : 0;
+  // MULTIPLAYER: support any number of players (not just 1 vs 2)
+  let maxScore = -1; //this is to set it to a min valuee
+  const winningPlayers = [];
 
-  // Get any timeout penalties
-  const penalty1 = state.timeoutPenalties?.[1] || 0;
-  const penalty2 = state.timeoutPenalties?.[2] || 0;
+  // Loop through all players to find the highest score
+  for (let i = 1; i <= state.playerCount; i = i + 1) {
+    const rawScore = state.scores ? state.scores[i] || 0 : 0;
+    const penalty = state.timeoutPenalties?.[i] || 0;
+    const finalScore = Math.max(0, rawScore - penalty);
 
-  // Calculate final scores with penalties
-  const finalScore1 = Math.max(0, rawScore1 - penalty1);
-  const finalScore2 = Math.max(0, rawScore2 - penalty2);
-
-  // Check for a tie
-  if (finalScore1 === finalScore2) {
-    return `Time is up! It's a tie: ${finalScore1} - ${finalScore2}`;
+    // Track players with the highest score
+    if (finalScore > maxScore) {
+      maxScore = finalScore;
+      winningPlayers = [i]; // Reset list with just this player
+    } else if (finalScore === maxScore) {
+      winningPlayers.push(i); // Add to list of tied winners
+    }
   }
 
-  // Determine the winner
-  const winner = finalScore1 > finalScore2 ? 1 : 2;
-  const winScore = Math.max(finalScore1, finalScore2);
-  const loseScore = Math.min(finalScore1, finalScore2);
-  return `Time is up! Player ${winner} wins ${winScore} to ${loseScore}!`;
+  // MULTIPLAYER: handle single winner or multiple tied winners
+  if (winningPlayers.length === 1) {
+    return `Time is up! Player ${winningPlayers[0]} WINS with ${maxScore} points!`;
+  } else {
+    // Multiple players tied - to show all of them
+    //why join operation -It takes all the elements of the list and concatenates them into a single string
+
+    const playerList = winningPlayers.join(", ");
+    return `Time is up! TIE between Players ${playerList} with ${maxScore} points!`;
+  }
 }
 
 // Function to check if a player can make any moves
@@ -661,14 +810,16 @@ function canPlayerMove(playerNumber) {
   return false;
 }
 
-// ========== GAME CONTROL FUNCTIONS ==========
+//   GAME CONTROL FUNCTIONS  
 
 // Function to restart the game and reset everything to initial state
 function restartGame() {
   console.log("Restarting game...");
 
-  // Create a fresh game state
-  const freshState = createInitialState();
+  // MULTIPLAYER: preserve the current player count when restarting
+  // Instead of createInitialState() which defaults to 2 players,
+  // pass state.playerCount to keep the same game mode (3/4/5/6 players)
+  const freshState = createInitialState(state.playerCount);
 
   // Copy the new state values into the current game state
   state.board = freshState.board;
@@ -743,27 +894,31 @@ function initRowRipperIndicator() {
   updateIndicatorPosition();
 }
 
-// ========== START THE GAME ==========
+//   START THE GAME  
 
-// Set up the timer display
-updateTimerDisplay();
-startTimer();
+// IMPORTANT: The game no longer auto-starts on page load!
+// Instead, we wait for the player selection modal to be interacted with.
+// This allows the user to choose how many players will play.
 
-// Render the initial board
-renderBoard(state);
-updatePlayerDisplay();
-updateMoveTimerDisplay();
-startMoveTimer();
+// WHY: When the page first loads, we need to:
+// 1. Set up button click handlers on player selection buttons
+// 2. Show the player selection modal (popup)
+// 3. Wait for user to click a player count button
+// 4. THEN initialize the game with that player count
+// See initializeGame() function above for what happens after selection.
 
-// Start the Row Ripper animation
-initRowRipperIndicator();
+// Event listener that runs when the HTML document is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+  // Step 1: Attach click handlers to all player selection buttons
+  // This makes the 2/3/4/5/6 player buttons functional
+  setupPlayerSelectionButtons();
 
-// Expose state for debugging in the console
-if (typeof window !== "undefined") {
-  window._gameState = state;
-}
+  // Step 2: Show the player selection modal (the popup for choosing player count)
+  // The modal is initially hidden in the HTML; this makes it visible
+  showPlayerSelectionModal();
+});
 
-// ========== EVENT LISTENERS FOR BUTTONS ==========
+//   EVENT LISTENERS FOR BUTTONS  
 
 // Add listener for the restart button
 const restartBtn = document.getElementById("restartBtn");
@@ -777,7 +932,7 @@ if (pauseBtn) {
   pauseBtn.addEventListener("click", togglePause);
 }
 
-// ========== TIMER FUNCTIONS ==========
+//   TIMER FUNCTIONS  
 
 // Function to format seconds as MM:SS (like 05:00, 04:59, etc)
 function formatTime(totalSeconds) {
@@ -839,7 +994,7 @@ function togglePause() {
   updatePauseButton();
 }
 
-// ========== MAIN GAME TIMER (10 MINUTES) ==========
+//   MAIN GAME TIMER (10 MINUTES)  
 
 // Function to start the countdown timer
 function startTimer() {
@@ -888,7 +1043,7 @@ function endGame(finalMessage) {
   updatePauseButton();
 }
 
-// ========== PER-MOVE TIMER (10 SECONDS PER PLAYER) ==========
+//   PER-MOVE TIMER (10 SECONDS PER PLAYER)  
 
 // Function to format time as SS (like 09, 08, etc)
 function formatTimeShort(seconds) {
@@ -934,8 +1089,9 @@ function startMoveTimer() {
         state.timeoutPenalties[timedOutPlayer] + 5;
       updateScoreDisplay(state);
 
-      // Switch to other player
-      state.currentPlayer = timedOutPlayer === 1 ? 2 : 1;
+      // MULTIPLAYER: switch to next player using getNextPlayer
+      // Instead of hardcoded 1/2 ternary, we use function that works for any player count
+      state.currentPlayer = getNextPlayer(timedOutPlayer, state.playerCount);
       state.message = `Player ${state.currentPlayer}'s turn`;
       updatePlayerDisplay();
 
@@ -944,9 +1100,10 @@ function startMoveTimer() {
       updateMoveTimerDisplay();
 
       // Check if the new current player can move
+      // MULTIPLAYER: if current player cannot move, it's game over
+      // Use score-based winner determination to handle any number of players
       if (!canPlayerMove(state.currentPlayer)) {
-        const winner = state.currentPlayer === 1 ? 2 : 1;
-        endGame(`Game Over! Player ${winner} wins!`);
+        endGame(determineWinnerMessage());
         return;
       }
 

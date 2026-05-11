@@ -132,15 +132,18 @@ body {
 
   /* Center the banner in the viewport (both horizontally and vertically) */
   position: fixed;
-  top: 50%;
+  /* Place banner at top-center so it's visible while scrolling */
+  top: 20px;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.98);
+
+  /* Moves the element horizontally to the left by 50% of its own width. */
+  transform: translateX(-50%) scale(1);
 
   overflow: hidden;
   isolation: isolate;
 
-  /* Appear above all other content */
-  z-index: 9999;
+  /* Appear above all other content and stay visible when scrolling */
+  z-index: 99999;
 }
 
 #transitionFx.active {
@@ -270,6 +273,10 @@ body {
 #transitionFx.active .rocket-mark::after {
   animation: neon-spark-gold 700ms ease-out 80ms;
 }
+
+
+/* The @keyframes rule in CSS is used to define animations. 
+It lets you describe how an element should change styles step by step during an animation sequence. */
 
 @keyframes transition-banner-in {
   0% {
@@ -536,12 +543,26 @@ h1 {
 
 .piece.player-1 {
   background: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15) inset;
 }
 
 .piece.player-2 {
   background: #ec4899;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15) inset;
+}
+
+.piece.player-3 {
+  background: #22c55e;
+}
+
+.piece.player-4 {
+  background: #eab308;
+}
+
+.piece.player-5 {
+  background: #a855f7;
+}
+
+.piece.player-6 {
+  background: #f97316;
 }
 
 .cell-label {
@@ -922,5 +943,150 @@ h1 {
       0 0 0 0 rgba(57, 255, 20, 0),
       inset 0 0 0px rgba(57, 255, 20, 0);
     background-color: rgba(57, 255, 20, 0);
+  }
+}
+
+/* PLAYER SELECTION MODAL STYLES */
+
+/* Modal overlay - dark semi-transparent background that covers entire screen */
+/* this overlay feature helps it to appear as a pop up ...yayyyy */
+.modal-overlay {
+  /* Position: fixed keeps it in place even if page scrolls */
+  position: fixed;
+  /* Top, left, right, bottom = 0 makes it cover entire viewport */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Dark semi-transparent background to dim the page behind modal */
+  background-color: rgba(0, 0, 0, 0.7);
+  /* Flexbox centers the modal content both horizontally and vertically */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* z-index puts modal on top of all other page content */
+  z-index: 1000;
+  /* Animation: fade in when modal appears */
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Modal content box - the white card that holds the player selection */
+.modal-content {
+  /* White background for the modal card */
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  /* Padding creates space inside the box around the text and buttons */
+  padding: 48px 40px;
+  /* border-radius rounds the corners */
+  border-radius: 16px;
+  /* box-shadow creates depth and makes it appear to float */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  /* max-width limits how wide the modal can be */
+  max-width: 500px;
+  /* width: 90% makes it responsive on mobile */
+  width: 90%;
+  /* text-align centers all text inside */
+  text-align: center;
+  /* Animation: slide up when modal appears */
+  animation: slide-up 0.4s ease-out;
+}
+
+/* Heading inside the modal */
+.modal-content h2 {
+  margin: 0 0 16px 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: 0.5px;
+}
+
+/* Subtitle text under the heading */
+.modal-content .modal-subtitle {
+  margin: 0 0 32px 0;
+  font-size: 16px;
+  color: #666666;
+  font-weight: 500;
+}
+
+/* Container for the player selection buttons */
+.player-selector {
+  /* Flex layout stacks buttons vertically */
+  display: flex;
+  flex-direction: column;
+  /* gap creates space between buttons */
+  gap: 12px;
+}
+
+/* Player selection button styling */
+.player-btn {
+  /* Gradient background makes buttons visually appealing */
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  /* Blue border */
+  border: 2px solid #1e40af;
+  /* White text */
+  color: white;
+  /* Padding creates space inside button */
+  padding: 16px 24px;
+  /* Rounded corners */
+  border-radius: 12px;
+  /* Large font size for easy reading */
+  font-size: 16px;
+  /* Bold text weight */
+  font-weight: 700;
+  /* Pointer cursor shows it's clickable */
+  cursor: pointer;
+  /* Smooth transition for hover effects */
+  transition: all 0.2s ease;
+  /* Flex inside button to center content */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Hover effect - button gets brighter and scales up slightly */
+.player-btn:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  border-color: #1e3a8a;
+}
+
+/* Active/clicked effect - button appears pressed */
+.player-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
+/* Large number inside the button */
+.player-btn-number {
+  font-size: 24px;
+  font-weight: 900;
+}
+
+/* Label text inside the button */
+.player-btn-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Animation: fade in effect for modal appearance */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Animation: slide up effect for modal content */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
