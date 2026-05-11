@@ -1083,3 +1083,128 @@ h1 {
   margin-left: 8px;
   opacity: 0.9;
 }
+
+/* --- Power-up and animation helpers --- */
+.powerup-indicator {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  z-index: 120000;
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
+}
+.powerup-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.powerup-text {
+  font-weight: 800;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+/* small pop on placement */
+.piece.pop {
+  transform: scale(1.25);
+  transition: transform 220ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+/* flying fragment used during explosions */
+.fly-piece {
+  position: fixed;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 200000;
+  pointer-events: none;
+  transform: translate(0, 0) scale(1);
+  transition:
+    transform 420ms ease-out,
+    opacity 420ms ease-out;
+}
+
+/* brief flash when a cell explodes */
+.cell.cell-explode {
+  animation: explode-flash 420ms ease-out;
+}
+@keyframes explode-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.12);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255, 255, 255, 0.14);
+    transform: scale(1.03);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    transform: scale(1);
+  }
+}
+
+/* confetti for game over */
+.confetti {
+  position: fixed;
+  top: -10px;
+  width: 10px;
+  height: 16px;
+  opacity: 0.95;
+  z-index: 200000;
+  pointer-events: none;
+  animation: confetti-fall 3s linear forwards;
+}
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(110vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Powerup panel css */
+.powerup-panel {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.01)
+  );
+  color: #dbeafe;
+  font-weight: 700;
+  min-height: 48px;
+}
+
+.powerup-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(99, 102, 241, 0.06);
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.12);
+}
+.powerup-entry img {
+  width: 28px;
+  height: 28px;
+}
+.powerup-entry .ptext {
+  font-size: 0.9rem;
+  color: #e6eef8;
+}

@@ -133,5 +133,12 @@ export function createInitialState(playerCount = 2) {
     rowRipperCurrentRow: 0, // Row ripper starts at top
 
     turnsCompleted: 0,
+    // Power-up state:
+    // `lockdown`: when set, the targeted player cannot cause explosions for `turnsLeft` turns
+    // `chaosDrift`: when set for a player, their next move will be randomized
+    powerups: {
+      lockdown: { player: null, turnsLeft: 0 },
+      chaosDrift: { pendingForPlayer: null },
+    },
   };
 }

@@ -228,6 +228,7 @@ function initializeGame(playerCount = 2) {
 
   //  Render the initial board state and all UI elements
   renderBoard(state);
+  updatePowerupPanel();
   // Initialize/clear move history UI for a new game
   initMoveHistoryUI();
   updatePlayerDisplay();
@@ -647,6 +648,145 @@ function displayFortressIndicator(player, row, col) {
   }, 5000);
 }
 
+// Power-up helpers
+
+// Return the number of pieces that would be added by this placement
+// (normal move = 1, first placement = capacity-1 (minimum 1)).
+function getPlacementIncrement(cell, isFirstPlacement) {
+  if (isFirstPlacement) return Math.max(1, cell.capacity - 1);
+  return 1;
+}
+
+// Get a list of valid cells (row/col objects) where `player` may place.
+// This respects the game's first-placement rule and also Lockdown restrictions.
+function getValidCellsForPlayer(player) {
+  const valid = [];
+  for (let r = 0; r < 12; r = r + 1) {
+    for (let c = 0; c < 6; c = c + 1) {
+      const cell = state.board[r][c];
+      const isEmpty = cell.count === 0;
+      const isOwner = cell.owner === player;
+
+      // First placement may allow placing on empty cell
+      const firstPlacementAllowed = isEmpty && !playedFirstMoveByPlayer[player];
+
+      if (isOwner || firstPlacementAllowed) {
+        // Enforce Lockdown: if player is under lockdown, they may not place
+        // in a cell that would reach capacity (i.e., trigger explosion).
+        const isUnderLockdown =
+          state.powerups &&
+          state.powerups.lockdown &&
+          state.powerups.lockdown.player === player &&
+          state.powerups.lockdown.turnsLeft > 0;
+
+        const inc = getPlacementIncrement(cell, firstPlacementAllowed);
+        if (isUnderLockdown && cell.count + inc >= cell.capacity) {
+          // not valid while lockdown blocks explosions
+          continue;
+        }
+
+        valid.push({ row: r, col: c, isFirstPlacement: firstPlacementAllowed });
+      }
+    }
+  }
+  return valid;
+}
+
+// Return whether the player currently has any valid moves (considering powerups)
+function playerHasValidMoves(player) {
+  const valid = getValidCellsForPlayer(player);
+  return valid && valid.length > 0;
+}
+
+// Update the persistent powerup panel in the HUD
+function updatePowerupPanel() {
+  const panel = document.getElementById("powerupPanel");
+  if (!panel) return;
+  panel.innerHTML = "";
+
+  // Lockdown display
+  if (
+    state.powerups &&
+    state.powerups.lockdown &&
+    state.powerups.lockdown.turnsLeft > 0
+  ) {
+    const ld = state.powerups.lockdown;
+    const entry = document.createElement("div");
+    entry.className = "powerup-entry";
+    const img = document.createElement("img");
+    img.src = "powerUpIcons/lockdown.png";
+    img.alt = "Lockdown";
+    const txt = document.createElement("div");
+    txt.className = "ptext";
+    txt.textContent = `LOCKDOWN: P${ld.player} (${ld.turnsLeft} turns)`;
+    entry.appendChild(img);
+    entry.appendChild(txt);
+    panel.appendChild(entry);
+  }
+
+  // Chaos Drift display
+  if (
+    state.powerups &&
+    state.powerups.chaosDrift &&
+    state.powerups.chaosDrift.pendingForPlayer
+  ) {
+    const cd = state.powerups.chaosDrift;
+    const entry = document.createElement("div");
+    entry.className = "powerup-entry";
+    const img = document.createElement("img");
+    img.src = "powerUpIcons/chaosDrift.png";
+    img.alt = "Chaos Drift";
+    const txt = document.createElement("div");
+    txt.className = "ptext";
+    txt.textContent = `CHAOS DRIFT: P${cd.pendingForPlayer} (next move)`;
+    entry.appendChild(img);
+    entry.appendChild(txt);
+    panel.appendChild(entry);
+  }
+
+  if (panel.childElementCount === 0) {
+    panel.textContent = "No active power-ups";
+  }
+}
+
+// Show a small power-up icon near the top to indicate activation
+function showPowerupIcon(iconFileName, message = "", duration = 3000) {
+  const container = document.createElement("div");
+  container.className = "powerup-indicator";
+  const img = document.createElement("img");
+  img.src = `powerUpIcons/${iconFileName}`;
+  img.alt = message || iconFileName;
+  img.className = "powerup-icon";
+  container.appendChild(img);
+  if (message) {
+    const span = document.createElement("span");
+    span.textContent = message;
+    span.className = "powerup-text";
+    container.appendChild(span);
+  }
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), duration);
+}
+
+// Activate Lockdown: targetPlayer cannot trigger explosions for next 3 turns.
+// byPlayer is the player who used the power-up (for logging/UX purposes).
+function activateLockdown(byPlayer, targetPlayer) {
+  if (!state.powerups) state.powerups = {};
+  state.powerups.lockdown = { player: targetPlayer, turnsLeft: 3 };
+  showPowerupIcon("lockdown.png", `LOCKDOWN on P${targetPlayer}`, 3000);
+  playSound("teleport");
+  updatePowerupPanel();
+}
+
+// Activate Chaos Drift: the target player's NEXT move is randomized.
+function activateChaosDrift(byPlayer, targetPlayer) {
+  if (!state.powerups) state.powerups = {};
+  state.powerups.chaosDrift = { pendingForPlayer: targetPlayer };
+  showPowerupIcon("chaosDrift.png", `CHAOS DRIFT for P${targetPlayer}`, 3000);
+  playSound("teleport");
+  updatePowerupPanel();
+}
+
 //   GAME LOGIC AND CLICK HANDLER
 
 // Function that handles when a player clicks on a cell
@@ -670,10 +810,38 @@ function handleBoardClick(event) {
   }
 
   // Get the row and column of the clicked cell
-  const row = Number(clickedCell.dataset.row);
-  const col = Number(clickedCell.dataset.col);
+  let row = Number(clickedCell.dataset.row);
+  let col = Number(clickedCell.dataset.col);
 
   console.log(`Clicked cell at row ${row}, col ${col}`);
+
+  // If Chaos Drift is pending for this player, override their chosen cell
+  const chaosPending =
+    state.powerups &&
+    state.powerups.chaosDrift &&
+    state.powerups.chaosDrift.pendingForPlayer === state.currentPlayer;
+
+  if (chaosPending) {
+    // Pick a random valid cell for this player and ignore the clicked target
+    const valid = getValidCellsForPlayer(state.currentPlayer);
+    if (!valid || valid.length === 0) {
+      // No valid moves available under constraints
+      alert(
+        `No valid cells available for Player ${state.currentPlayer} (Chaos Drift).`,
+      );
+      return;
+    }
+    const pick = valid[Math.floor(Math.random() * valid.length)];
+    row = pick.row;
+    col = pick.col;
+    state.powerups.chaosDrift.pendingForPlayer = null;
+    showPowerupIcon(
+      "chaosDrift.png",
+      `P${state.currentPlayer} forced to (${row},${col})`,
+      1800,
+    );
+    updatePowerupPanel();
+  }
 
   // Get the cell data from our game state
   const cellData = state.board[row][col];
@@ -708,19 +876,43 @@ function handleBoardClick(event) {
     // Remember if this was a new Fortress Cell claim
     const wasFortressEmpty = cellData.isFortress && cellData.count === 0;
 
-    // If this is the player's personal first placement and the cell is empty,
-    // place capacity - 1 pieces instead of a single piece.
+    // Determine if this is the player's personal first placement
     const isFirstPlacement =
       isEmpty && !playedFirstMoveByPlayer[state.currentPlayer];
 
+    // Enforce Lockdown: if this player is targeted by lockdown, prevent
+    // any placement that would reach or exceed capacity (i.e. trigger explosion).
+    const lockdownActive =
+      state.powerups &&
+      state.powerups.lockdown &&
+      state.powerups.lockdown.player === state.currentPlayer &&
+      state.powerups.lockdown.turnsLeft > 0;
+
+    const increment = getPlacementIncrement(cellData, isFirstPlacement);
+    if (lockdownActive && cellData.count + increment >= cellData.capacity) {
+      // If the lockdown blocks this placement, check whether the player
+      // has any other valid cells. If not, end the game.
+      const validCells = getValidCellsForPlayer(state.currentPlayer);
+      if (!validCells || validCells.length === 0) {
+        renderBoard(state);
+        endGame(determineWinnerMessage());
+        return;
+      }
+
+      // Otherwise simply block this move and inform the player
+      playSound("click");
+      alert(
+        `Player ${state.currentPlayer} is under LOCKDOWN and cannot trigger explosions.`,
+      );
+      return;
+    }
+
+    // Apply the placement
     if (isFirstPlacement) {
       cellData.owner = state.currentPlayer;
-      // Place capacity - 1 pieces (minimum 1)
       cellData.count = Math.max(1, cellData.capacity - 1);
-      // mark that this player has made their initial placement
       playedFirstMoveByPlayer[state.currentPlayer] = true;
     } else {
-      // Normal move: only owners can add pieces, so increment by 1
       cellData.owner = state.currentPlayer;
       cellData.count = cellData.count + 1;
     }
@@ -732,10 +924,12 @@ function handleBoardClick(event) {
       activateFortressCell(state.currentPlayer, row, col);
     }
 
-    // Check if the cell is full and needs to explode
+    // Check if the cell is full and needs to explode (normal behavior)
+    // Note: Lockdown already prevented a placement that would explode.
     explodeCell(row, col, state.currentPlayer);
 
     // Commit the points earned during this move's reaction chain
+    let explosionsThisMove = 0;
     if (
       reactionScoreContext &&
       reactionScoreContext.player === state.currentPlayer
@@ -747,6 +941,9 @@ function handleBoardClick(event) {
 
       state.scores[state.currentPlayer] =
         (state.scores[state.currentPlayer] || 0) + pointsEarnedThisTurn;
+
+      // capture explosions count before clearing context so we can award powerups
+      explosionsThisMove = reactionScoreContext.explosionCount || 0;
     }
 
     reactionScoreContext = null;
@@ -758,7 +955,40 @@ function handleBoardClick(event) {
     addMoveToHistory(state.currentPlayer, row, col);
 
     // Handle turn switching
+    const previousPlayer = state.currentPlayer;
     handleTurnSwitch();
+
+    // Award power-ups based on exact explosion counts achieved during this move.
+    // If the moving player caused exactly 3 explosions, grant Lockdown against the next player.
+    if (explosionsThisMove === 3) {
+      activateLockdown(previousPlayer, state.currentPlayer);
+    }
+
+    // If the moving player caused exactly 5 explosions, force Chaos Drift on the next player.
+    if (explosionsThisMove === 5) {
+      activateChaosDrift(previousPlayer, state.currentPlayer);
+    }
+
+    // If a lockdown was active against the player who just moved, decrement the turns left
+    if (
+      state.powerups &&
+      state.powerups.lockdown &&
+      state.powerups.lockdown.player === previousPlayer &&
+      state.powerups.lockdown.turnsLeft > 0
+    ) {
+      state.powerups.lockdown.turnsLeft = state.powerups.lockdown.turnsLeft - 1;
+      // notify when lockdown ends
+      if (state.powerups.lockdown.turnsLeft <= 0) {
+        showPowerupIcon(
+          "lockdown.png",
+          `LOCKDOWN ended for P${previousPlayer}`,
+          2200,
+        );
+        state.powerups.lockdown.player = null;
+        state.powerups.lockdown.turnsLeft = 0;
+        updatePowerupPanel();
+      }
+    }
 
     if (playerIsEliminated(state.currentPlayer)) {
       renderBoard(state);
