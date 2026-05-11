@@ -19,6 +19,38 @@ import { playSound } from "./soundmanager.js";
 let state = null;
 //IMPLEMENTING MOVE HISTORY FEATURE
 
+// to count the number of explosions
+let reactionScoreContext = null;
+
+// Tracks whether each player has earned Second Wind eligibility
+// at least one explosion or at least one point gained in any turn.
+let secondWindEligibilityByPlayer = {};
+
+function resetSecondWindEligibility(playerCount) {
+  secondWindEligibilityByPlayer = {};
+
+  //first setting it false for all players and once each player gets a score , ill set it to true
+  for (let i = 1; i <= playerCount; i = i + 1) {
+    secondWindEligibilityByPlayer[i] = false;
+  }
+}
+
+function allPlayersAreSecondWindEligible(playerCount) {
+  for (let i = 1; i <= playerCount; i = i + 1) {
+    if (!secondWindEligibilityByPlayer[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function getPlayerNetScore(currentState, playerNumber) {
+  const rawScore = currentState.scores?.[playerNumber] || 0;
+  const penalty = currentState.timeoutPenalties?.[playerNumber] || 0;
+  return Math.max(0, rawScore - penalty);
+}
+
 // Move history tracking keeps a short list of recent moves
 
 //we store the datat in array
@@ -165,7 +197,7 @@ function hidePlayerSelectionModal() {
 // WHY: Game was starting immediately on page load; now it waits for player selection
 // This function is called when user clicks a player count button
 function initializeGame(playerCount = 2) {
-  // STEP 1: Validate and create game state with selected player count
+  // Validate and create game state with selected player count
   // This initializes scores, penalties, board, etc. for N players
   try {
     state = createInitialState(playerCount);
@@ -174,41 +206,42 @@ function initializeGame(playerCount = 2) {
     return;
   }
 
-  // STEP 2: Hide the player selection modal to show the game board
+  //  Hide the player selection modal to show the game board
   hidePlayerSelectionModal();
 
-  // STEP 3: Build the 12x6 board grid with cell divs
+  //  Build the 12x6 board grid with cell divs
   initializeBoardGrid();
 
-  // STEP 4: Reset all timer variables to starting values
+  //  Reset all timer variables to starting values
   timeLeft = GAME_DURATION_SECONDS;
   moveTimeLeft = MOVE_DURATION_SECONDS;
   isPaused = false;
+  resetSecondWindEligibility(playerCount);
 
-  // STEP 5: Render the initial board state and all UI elements
+  //  Render the initial board state and all UI elements
   renderBoard(state);
   // Initialize/clear move history UI for a new game
   initMoveHistoryUI();
   updatePlayerDisplay();
   updateSecondWindDisplay();
 
-  // STEP 6: Set up and start both timers (game timer + move timer)
+  // Set up and start both timers (game timer + move timer)
   updateTimerDisplay();
   startTimer();
   updateMoveTimerDisplay();
   startMoveTimer();
 
-  // STEP 7: Start the Row Ripper animation
+  //  Start the Row Ripper animation
   initRowRipperIndicator();
 
-  // STEP 8: Attach click listener to board so clicks place pieces
+  //Attach click listener to board so clicks place pieces
   // Make sure to remove old listener first to avoid double-clicks
   board.removeEventListener("click", handleBoardClick);
   board.addEventListener("click", handleBoardClick);
 }
 
 // Function to set up click handlers on all player selection buttons
-// WHY: Buttons need to know when clicked to start the game with selected count
+// Buttons need to know when clicked to start the game with selected count
 // This runs when page loads (in DOMContentLoaded event)
 function setupPlayerSelectionButtons() {
   // Find all buttons with class "player-btn" (2/3/4/5/6 player buttons)
@@ -216,21 +249,34 @@ function setupPlayerSelectionButtons() {
 
   // Add click event listener to each button
   buttons.forEach((button) => {
-    button.addEventListener("click", (event) => {
-      // Get the player count from the button's data-players attribute
-      // Example: <button data-players="3"> has value "3"
-      const playerCount = parseInt(
-        event.target.closest(".player-btn").dataset.players,
-      );
+    button.addEventListener("click", () => {
+      // Use the bound button directly to avoid target/closest edge cases.
+      const playerCount = Number(button.dataset.players);
 
       // Validate the number
-      if (playerCount < 2 || playerCount > 6) {
+      if (
+        !Number.isInteger(playerCount) ||
+        playerCount < 2 ||
+        playerCount > 6
+      ) {
         alert("Invalid player count. Must be 2-6.");
         return;
       }
 
       // Start the game with this player count
-      initializeGame(playerCount);
+      //error handling - this is the format
+      try {
+        initializeGame(playerCount);
+      } catch (err) {
+        console.error("initializeGame failed:", err);
+        // Ensure modal is hidden so user can see console and page state
+        try {
+          hidePlayerSelectionModal();
+        } catch (e) {
+          // swallow
+        }
+        alert("Failed to start game. See console for details.");
+      }
     });
   });
 }
@@ -343,6 +389,14 @@ function activateRowRipper(row, currentPlayer) {
       // Already owned by current player: add one more piece
       cell.count = cell.count + 1;
     } else {
+      if (
+        reactionScoreContext &&
+        reactionScoreContext.player === currentPlayer
+      ) {
+        reactionScoreContext.capturedPieces =
+          reactionScoreContext.capturedPieces + cell.count;
+      }
+
       // Owned by another player: take over with one piece
       cell.owner = currentPlayer;
       cell.count = 1;
@@ -375,6 +429,16 @@ function spreadToNeighbor(row, col, currentPlayer) {
     return;
   }
 
+  if (
+    reactionScoreContext &&
+    reactionScoreContext.player === currentPlayer &&
+    neighbor.owner !== null &&
+    neighbor.owner !== currentPlayer
+  ) {
+    reactionScoreContext.capturedPieces =
+      reactionScoreContext.capturedPieces + neighbor.count;
+  }
+
   // Add one piece from the current player to this neighbor
   neighbor.owner = currentPlayer;
   neighbor.count = neighbor.count + 1;
@@ -387,6 +451,16 @@ function spreadToNeighbor(row, col, currentPlayer) {
 function triggerExplosionAt(row, col, currentPlayer, allowTeleport) {
   const currentCell = state.board[row][col];
   const isFortressExplosion = currentCell.isFortress;
+
+  if (reactionScoreContext && reactionScoreContext.player === currentPlayer) {
+    if (reactionScoreContext.explosionCount > 0) {
+      reactionScoreContext.chainReactions =
+        reactionScoreContext.chainReactions + 1;
+    }
+
+    reactionScoreContext.explosionCount =
+      reactionScoreContext.explosionCount + 1;
+  }
 
   // Check if we should teleport pieces instead of exploding
   if (allowTeleport && currentCell.teleportPair) {
@@ -666,6 +740,13 @@ function handleBoardClick(event) {
     cellData.count === 0 || cellData.owner === state.currentPlayer;
 
   if (canPlayHere) {
+    reactionScoreContext = {
+      player: state.currentPlayer,
+      capturedPieces: 0,
+      chainReactions: 0,
+      explosionCount: 0,
+    };
+
     // Remember if this was a new Fortress Cell claim
     const wasFortressEmpty = cellData.isFortress && cellData.count === 0;
 
@@ -682,6 +763,26 @@ function handleBoardClick(event) {
 
     // Check if the cell is full and needs to explode
     explodeCell(row, col, state.currentPlayer);
+
+    // Commit the points earned during this move's reaction chain
+    if (
+      reactionScoreContext &&
+      reactionScoreContext.player === state.currentPlayer
+    ) {
+      //SCORING LOGIC -Points are calculated based on the number of pieces captured in a reaction and the number of chain reactions.
+      const pointsEarnedThisTurn =
+        reactionScoreContext.capturedPieces +
+        reactionScoreContext.chainReactions;
+
+      state.scores[state.currentPlayer] =
+        (state.scores[state.currentPlayer] || 0) + pointsEarnedThisTurn;
+
+      if (reactionScoreContext.explosionCount > 0 || pointsEarnedThisTurn > 0) {
+        secondWindEligibilityByPlayer[state.currentPlayer] = true;
+      }
+    }
+
+    reactionScoreContext = null;
 
     // Record this move in the Move History
     // The history shows this completed move until the next move occurs
@@ -700,10 +801,8 @@ function handleBoardClick(event) {
     moveTimeLeft = MOVE_DURATION_SECONDS;
     startMoveTimer();
 
-    // Check if we need to activate Second Wind after every 4 turns
-    if (state.turnsCompleted >= 4) {
-      checkAndActivateSecondWind();
-    }
+    // Check if Second Wind can be activated under eligibility + score rules
+    checkAndActivateSecondWind();
 
     // Update the Second Wind display
     updateSecondWindDisplay();
@@ -768,32 +867,8 @@ function updatePlayerDisplay() {
   }
 }
 
-// Function to count pieces for each player and update the score display
+// Function to display the current point totals for each player
 function updateScoreDisplay(currentState) {
-  // MULTIPLAYER: building an object to count pieces per player instead of hardcoded player1/player2- here i am using and array
-  const pieceCountByPlayer = {};
-
-  // Count all pieces on the board for each player
-  for (let row = 0; row < 12; row = row + 1) {
-    for (let col = 0; col < 6; col = col + 1) {
-      const cell = currentState.board[row][col];
-
-      // If cell has an owner, adding that cell count t the players count to update in array
-      if (cell.owner !== null) {
-        if (!pieceCountByPlayer[cell.owner]) {
-          pieceCountByPlayer[cell.owner] = 0;
-        }
-        pieceCountByPlayer[cell.owner] =
-          pieceCountByPlayer[cell.owner] + cell.count;
-      }
-    }
-  }
-
-  // MULTIPLAYER: update scores for all players in the game
-  for (let i = 1; i <= currentState.playerCount; i = i + 1) {
-    currentState.scores[i] = pieceCountByPlayer[i] || 0;
-  }
-
   // Build score display text for all players
   // MULTIPLAYER: loop through all players to build display string
   const scoreElement = document.getElementById("score");
@@ -802,9 +877,7 @@ function updateScoreDisplay(currentState) {
     const scoreParts = [];
 
     for (let i = 1; i <= currentState.playerCount; i++) {
-      const rawScore = pieceCountByPlayer[i] || 0;
-      const penalty = currentState.timeoutPenalties?.[i] || 0;
-      const displayScore = Math.max(0, rawScore - penalty);
+      const displayScore = getPlayerNetScore(currentState, i);
       scoreParts.push(`Player ${i}: ${displayScore}`);
     }
 
@@ -823,11 +896,16 @@ function checkAndActivateSecondWind() {
     return;
   }
 
+  // All players must have had at least one explosion or positive point event.
+  if (!allPlayersAreSecondWindEligible(state.playerCount)) {
+    return;
+  }
+
   // Update scores first to make sure they're current
   updateScoreDisplay(state);
 
-  // Check how many pieces the current player has
-  const currentScore = state.scores[state.currentPlayer] || 0;
+  // Check the current player's net score (score after timeout penalties).
+  const currentScore = getPlayerNetScore(state, state.currentPlayer);
 
   // If current player has no pieces, give Second Wind to the next player
   // MULTIPLAYER: use getNextPlayer instead of hardcoded 1/2 ternary
@@ -841,13 +919,11 @@ function checkAndActivateSecondWind() {
 function determineWinnerMessage() {
   // MULTIPLAYER: support any number of players (not just 1 vs 2)
   let maxScore = -1; //this is to set it to a min valuee
-  const winningPlayers = [];
+  let winningPlayers = [];
 
   // Loop through all players to find the highest score
   for (let i = 1; i <= state.playerCount; i = i + 1) {
-    const rawScore = state.scores ? state.scores[i] || 0 : 0;
-    const penalty = state.timeoutPenalties?.[i] || 0;
-    const finalScore = Math.max(0, rawScore - penalty);
+    const finalScore = getPlayerNetScore(state, i);
 
     // Track players with the highest score
     if (finalScore > maxScore) {
@@ -909,6 +985,7 @@ function restartGame() {
   state.secondWind = freshState.secondWind;
   state.gameOver = false;
   state.message = "Player 1's turn";
+  resetSecondWindEligibility(state.playerCount);
 
   // Reset timer variables
   isPaused = false;
