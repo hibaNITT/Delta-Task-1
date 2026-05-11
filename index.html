@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chain Reaction Board</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <main class="page">
+        <div id="transitionFx" aria-live="polite" aria-atomic="true">
+            <span class="rocket-mark" aria-hidden="true">></span>
+            <span class="transition-label">TRANSPORTATON</span>
+            <span class="rocket-trail" aria-hidden="true"></span>
+        </div>
+        <h1>Chain Reaction</h1>
+        <section class="layout-grid" aria-label="Game info and controls">
+            <div id="status" class="col-12 col-sm-12 col-md-8"></div>
+            <div id="score" class="col-12 col-sm-12 col-md-8"></div>
+            <div id="timer" class="col-12 col-sm-12 col-md-8"></div>
+            <div id="moveTimer" class="col-12 col-sm-12 col-md-8"></div>
+            <button id="pauseBtn" class="col-12 col-sm-12 col-md-8" aria-pressed="false">Pause</button>
+            <button id="restartBtn" class="col-12 col-sm-12 col-md-8">Play Again</button>
+        </section>
+        <div class="board-container">
+            <div id="rowRipperIndicator" class="row-ripper-indicator" aria-label="Row Ripper power-up indicator"></div>
+            <div id="secondWindIndicator" class="second-wind-indicator" aria-label="Second Wind power-up indicator"
+                style="display: none;">
+                <img src="powerUpIcons/secondWind.png" alt="Second Wind Active" class="second-wind-icon" />
+                <span class="second-wind-text">SECOND WIND</span>
+                <span class="second-wind-player">Player 1 gets 2 turns</span>
+                <span class="second-wind-chances">2 chances left</span>
+            </div>
+            <div id="fortressCellIndicator" class="fortress-cell-indicator"
+                aria-label="Fortress Cell power-up indicator" style="display: none;">
+                <img src="powerUpIcons/fortressCell.png" alt="Fortress Cell Activated" class="fortress-cell-icon" />
+                <span class="fortress-cell-text">FORTRESS CLAIMED</span>
+                <span class="fortress-cell-player">Player 1</span>
+            </div>
+            <div id="board" aria-label="Game board"></div>
+        </div>
+    </main>
+
+    <!-- import/export only work in JavaScript modules.
+So in HTML, the script must be loaded as module in
+     or else it will be treated as a normal script -->
+
+    <script type="module" src="eventhandler.js"></script>
+</body>
+
+</html>

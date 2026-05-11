@@ -1,0 +1,23 @@
+1. Row Ripper -  make all the cells in that row as theirs- they are the owner
+appears on the row randomly and if an explosion happens in that row then the effect will occur
+
+2.Second Wind - when the opponent is at zero he gets 2 chances 
+
+3. Fortress Cell - once you take ownership of that cell, when their explosion happens they cant take ownership
+only of you coins explode you can move out and they can take ownership -  we can keep special neon green colour cells
+
+4. Bonus - after 20 explosions +5
+
+ sabotage 
+
+1.Lockdown
+Effect: For the next 3 turns, your opponent cannot trigger explosions. T
+hey can only place pieces in cells that are below maximum capacity.
+
+criteria -  his move should stimulate exactly 3 explosions not more
+not less
+
+2. Chaos Drift
+Randomizes the opponent’s next move — 
+instead of choosing freely, their piece lands in a random valid cell.
+his move should stimulate exactly 5 explosions not more not less
