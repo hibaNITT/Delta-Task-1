@@ -664,6 +664,7 @@ function handleBoardClick(event) {
   }
 
   if (playerIsEliminated(state.currentPlayer)) {
+    renderBoard(state);
     endGame(determineWinnerMessage());
     return;
   }
@@ -760,6 +761,7 @@ function handleBoardClick(event) {
     handleTurnSwitch();
 
     if (playerIsEliminated(state.currentPlayer)) {
+      renderBoard(state);
       endGame(determineWinnerMessage());
       return;
     }
@@ -777,6 +779,7 @@ function handleBoardClick(event) {
     if (playerIsEliminated(state.currentPlayer)) {
       // No moves available - determine winner by highest score
       // This works for any number of players (2, 3, 4, 5, 6)
+      renderBoard(state);
       endGame(determineWinnerMessage());
       return;
     }
@@ -1153,6 +1156,7 @@ function startMoveTimer() {
 
       // Check if the new current player still has any pieces on the board
       if (!playerHasPiecesOnBoard(state.currentPlayer)) {
+        renderBoard(state);
         endGame(determineWinnerMessage());
         return;
       }
