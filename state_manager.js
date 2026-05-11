@@ -132,12 +132,6 @@ export function createInitialState(playerCount = 2) {
     message: "Player 1's turn",
     rowRipperCurrentRow: 0, // Row ripper starts at top
 
-    // Second Wind powerup - gives a player extra turns
     turnsCompleted: 0,
-    secondWind: {
-      active: false,
-      player: null,
-      chancesLeft: 2, // 2 extra turns when active
-    },
   };
 }

@@ -40,7 +40,7 @@ USING A RECURRING FUNCTION
 
 The cell is empty (count === 0), OR
 The cell already belongs to them (owner === currentPlayer)
-Create a canPlayerMove(playerNum) function that:
+Create a helper that checks whether a player still owns pieces on the board:
 After a move completes, check if the opponent can move:
 
 10. adding a restart button
@@ -139,18 +139,6 @@ In styles.css, the power-up has its visual treatment:
 In index.html, the indicator element itself is placed
  beside the board so it can move independently.
 
-22. Power up - second wind -
- State tracking - Added turnsCompleted counter and secondWind object to track activation & chances
-
-Activation check - When score = 0 after 4+ turns → powerup activates
-
-Game mechanic - Skip turn switch for 2 moves, then resume normal turns
-
-Visual indicator - Cyan neon box showing chances remaining
-
-Effects - Pulse animation on cells + sound when activated
-
-
 23. Fortress cell - 
 
 State: Added isFortress property to each cell in createInitialState()
@@ -182,9 +170,6 @@ Triggered showTransitionEffect("FORTRESS CLAIMED") and a short sound when a fort
 
 Sound: Shortened the claim/click audio by switching the fortress claim sound to the shorter 
 click sound and increased sounds.click.playbackRate in soundmanager.js to make clicks faster.
-
-Second Wind fix: Changed checkAndActivateSecondWind() in eventhandler.js so
- Second Wind is assigned to the other player when the current player has 0 score (per your request).
 
  24. Multiplayer mode- 
 

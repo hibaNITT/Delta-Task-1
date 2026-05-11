@@ -22,33 +22,41 @@ let state = null;
 // to count the number of explosions
 let reactionScoreContext = null;
 
-// Tracks whether each player has earned Second Wind eligibility
-// at least one explosion or at least one point gained in any turn.
-let secondWindEligibilityByPlayer = {};
+// Track whether each player has made their personal initial placement
+let playedFirstMoveByPlayer = {};
 
-function resetSecondWindEligibility(playerCount) {
-  secondWindEligibilityByPlayer = {};
-
-  //first setting it false for all players and once each player gets a score , ill set it to true
+function resetPlayedFirstMoveByPlayer(playerCount) {
+  playedFirstMoveByPlayer = {};
   for (let i = 1; i <= playerCount; i = i + 1) {
-    secondWindEligibilityByPlayer[i] = false;
+    playedFirstMoveByPlayer[i] = false;
   }
-}
-
-function allPlayersAreSecondWindEligible(playerCount) {
-  for (let i = 1; i <= playerCount; i = i + 1) {
-    if (!secondWindEligibilityByPlayer[i]) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 function getPlayerNetScore(currentState, playerNumber) {
   const rawScore = currentState.scores?.[playerNumber] || 0;
   const penalty = currentState.timeoutPenalties?.[playerNumber] || 0;
   return Math.max(0, rawScore - penalty);
+}
+
+//to check if the game has ended
+function playerHasPiecesOnBoard(playerNumber) {
+  for (let row = 0; row < 12; row = row + 1) {
+    for (let col = 0; col < 6; col = col + 1) {
+      const cell = state.board[row][col];
+      if (cell.owner === playerNumber && cell.count > 0) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function playerIsEliminated(playerNumber) {
+  return (
+    playedFirstMoveByPlayer[playerNumber] === true &&
+    !playerHasPiecesOnBoard(playerNumber)
+  );
 }
 
 // Move history tracking keeps a short list of recent moves
@@ -216,14 +224,13 @@ function initializeGame(playerCount = 2) {
   timeLeft = GAME_DURATION_SECONDS;
   moveTimeLeft = MOVE_DURATION_SECONDS;
   isPaused = false;
-  resetSecondWindEligibility(playerCount);
+  resetPlayedFirstMoveByPlayer(playerCount);
 
   //  Render the initial board state and all UI elements
   renderBoard(state);
   // Initialize/clear move history UI for a new game
   initMoveHistoryUI();
   updatePlayerDisplay();
-  updateSecondWindDisplay();
 
   // Set up and start both timers (game timer + move timer)
   updateTimerDisplay();
@@ -583,75 +590,6 @@ function showRowRipperEffect(row) {
   }
 }
 
-//   SECOND WIND POWER-UP LOGIC
-
-// Function to activate Second Wind for a player
-// Gives them 2 extra turns to play
-function activateSecondWind(player) {
-  state.secondWind.active = true;
-  state.secondWind.player = player;
-  state.secondWind.chancesLeft = 2;
-  showSecondWindEffect();
-  playSound("powerup");
-  console.log(
-    `🎯 SECOND WIND ACTIVATED for Player ${player}! They get 2 extra chances!`,
-  );
-  showTransitionEffect("SECOND WIND");
-}
-
-// Function to update the Second Wind display on the screen
-function updateSecondWindDisplay() {
-  const indicator = document.getElementById("secondWindIndicator");
-  if (!indicator) return;
-
-  // Show the indicator if Second Wind is active for the current player
-  if (
-    state.secondWind.active &&
-    state.secondWind.player === state.currentPlayer
-  ) {
-    indicator.style.display = "block";
-
-    // Update the player text
-    const playerSpan = indicator.querySelector(".second-wind-player");
-    if (playerSpan) {
-      playerSpan.textContent = `Player ${state.secondWind.player} gets 2 turns`;
-    }
-
-    // Update the chances left
-    const chancesSpan = indicator.querySelector(".second-wind-chances");
-    if (chancesSpan) {
-      const plural = state.secondWind.chancesLeft !== 1 ? "s" : "";
-      chancesSpan.textContent = `${state.secondWind.chancesLeft} chance${plural} left`;
-    }
-  } else {
-    // Hide if not active or not current player
-    indicator.style.display = "none";
-  }
-}
-
-// Function to show visual effect for Second Wind activation
-function showSecondWindEffect() {
-  const allCells = document.querySelectorAll(".cell");
-
-  for (let i = 0; i < allCells.length; i = i + 1) {
-    const cell = allCells[i];
-    cell.classList.add("second-wind-pulse");
-
-    // Remove effect after animation
-    setTimeout(() => {
-      cell.classList.remove("second-wind-pulse");
-    }, 1500);
-  }
-}
-
-// Function to turn off Second Wind when it's used up
-function deactivateSecondWind() {
-  state.secondWind.active = false;
-  state.secondWind.player = null;
-  state.secondWind.chancesLeft = 0;
-  updateSecondWindDisplay();
-}
-
 //   FORTRESS CELL POWER-UP LOGIC
 
 // Function called when a player claims a Fortress Cell
@@ -725,6 +663,11 @@ function handleBoardClick(event) {
     return;
   }
 
+  if (playerIsEliminated(state.currentPlayer)) {
+    endGame(determineWinnerMessage());
+    return;
+  }
+
   // Get the row and column of the clicked cell
   const row = Number(clickedCell.dataset.row);
   const col = Number(clickedCell.dataset.col);
@@ -735,9 +678,23 @@ function handleBoardClick(event) {
   const cellData = state.board[row][col];
 
   // Check if this cell can be played on
-  // Players can click on empty cells or cells that already have their pieces
-  const canPlayHere =
-    cellData.count === 0 || cellData.owner === state.currentPlayer;
+
+  // - On the very first turn of the game (state.turnsCompleted === 0) a player
+  //   may place on an empty cell. That placement should add (capacity - 1)
+  //   pieces into that cell.
+  // - After the first turn, players may only click cells they already own.
+  let canPlayHere = false;
+  const isEmpty = cellData.count === 0;
+  const isOwner = cellData.owner === state.currentPlayer;
+
+  if (isEmpty) {
+    // Allow clicking empty cells only if this player hasn't yet made their
+    // personal initial placement.
+    canPlayHere = !playedFirstMoveByPlayer[state.currentPlayer];
+  } else {
+    // If the cell has pieces, only allow the owning player to click it
+    canPlayHere = isOwner;
+  }
 
   if (canPlayHere) {
     reactionScoreContext = {
@@ -750,9 +707,22 @@ function handleBoardClick(event) {
     // Remember if this was a new Fortress Cell claim
     const wasFortressEmpty = cellData.isFortress && cellData.count === 0;
 
-    // Add a piece to this cell
-    cellData.owner = state.currentPlayer;
-    cellData.count = cellData.count + 1;
+    // If this is the player's personal first placement and the cell is empty,
+    // place capacity - 1 pieces instead of a single piece.
+    const isFirstPlacement =
+      isEmpty && !playedFirstMoveByPlayer[state.currentPlayer];
+
+    if (isFirstPlacement) {
+      cellData.owner = state.currentPlayer;
+      // Place capacity - 1 pieces (minimum 1)
+      cellData.count = Math.max(1, cellData.capacity - 1);
+      // mark that this player has made their initial placement
+      playedFirstMoveByPlayer[state.currentPlayer] = true;
+    } else {
+      // Normal move: only owners can add pieces, so increment by 1
+      cellData.owner = state.currentPlayer;
+      cellData.count = cellData.count + 1;
+    }
     playSound("click");
     console.log("after move:", { row, col, cell: state.board[row][col] });
 
@@ -776,10 +746,6 @@ function handleBoardClick(event) {
 
       state.scores[state.currentPlayer] =
         (state.scores[state.currentPlayer] || 0) + pointsEarnedThisTurn;
-
-      if (reactionScoreContext.explosionCount > 0 || pointsEarnedThisTurn > 0) {
-        secondWindEligibilityByPlayer[state.currentPlayer] = true;
-      }
     }
 
     reactionScoreContext = null;
@@ -790,8 +756,13 @@ function handleBoardClick(event) {
 
     addMoveToHistory(state.currentPlayer, row, col);
 
-    // Handle turn switching and Second Wind logic
+    // Handle turn switching
     handleTurnSwitch();
+
+    if (playerIsEliminated(state.currentPlayer)) {
+      endGame(determineWinnerMessage());
+      return;
+    }
 
     // Update all displays
     updatePlayerDisplay();
@@ -801,15 +772,9 @@ function handleBoardClick(event) {
     moveTimeLeft = MOVE_DURATION_SECONDS;
     startMoveTimer();
 
-    // Check if Second Wind can be activated under eligibility + score rules
-    checkAndActivateSecondWind();
-
-    // Update the Second Wind display
-    updateSecondWindDisplay();
-
     // Check if the new current player can make any moves
-    // MULTIPLAYER: if current player cannot move, check all players or use score-based winner
-    if (!canPlayerMove(state.currentPlayer)) {
+    // MULTIPLAYER: if current player has no pieces left, the game ends
+    if (playerIsEliminated(state.currentPlayer)) {
       // No moves available - determine winner by highest score
       // This works for any number of players (2, 3, 4, 5, 6)
       endGame(determineWinnerMessage());
@@ -823,31 +788,8 @@ function handleBoardClick(event) {
 
 // Function to handle switching turns between players
 function handleTurnSwitch() {
-  // Check if Second Wind is active for the current player
-  if (
-    state.secondWind.active &&
-    state.secondWind.player === state.currentPlayer &&
-    state.secondWind.chancesLeft > 0
-  ) {
-    // Player has extra turns left
-    state.secondWind.chancesLeft = state.secondWind.chancesLeft - 1;
-    updateSecondWindDisplay();
-
-    if (state.secondWind.chancesLeft === 0) {
-      // Second Wind is used up - switch to next player using getNextPlayer
-      // MULTIPLAYER: useing getNextPlayer instead of hardcoded 1/2 ternary operator
-      state.currentPlayer = getNextPlayer(
-        state.currentPlayer,
-        state.playerCount,
-      );
-      deactivateSecondWind();
-    }
-    // If chances left, same player plays again
-  } else {
-    // No Second Wind or it's inactive - normal turn switch
-    // MULTIPLAYER: use getNextPlayer instead of hardcoded 1/2 ternary
-    state.currentPlayer = getNextPlayer(state.currentPlayer, state.playerCount);
-  }
+  // Normal turn switch
+  state.currentPlayer = getNextPlayer(state.currentPlayer, state.playerCount);
 
   // Update the message and turn counter
   state.message = `Player ${state.currentPlayer}'s turn`;
@@ -888,33 +830,6 @@ function updateScoreDisplay(currentState) {
 
 //   GAME STATE CHECKING FUNCTIONS
 
-// Function to check if Second Wind should be activated
-// Activates for a player if the other player has 0 score
-function checkAndActivateSecondWind() {
-  // Don't activate if Second Wind is already active
-  if (state.secondWind.active) {
-    return;
-  }
-
-  // All players must have had at least one explosion or positive point event.
-  if (!allPlayersAreSecondWindEligible(state.playerCount)) {
-    return;
-  }
-
-  // Update scores first to make sure they're current
-  updateScoreDisplay(state);
-
-  // Check the current player's net score (score after timeout penalties).
-  const currentScore = getPlayerNetScore(state, state.currentPlayer);
-
-  // If current player has no pieces, give Second Wind to the next player
-  // MULTIPLAYER: use getNextPlayer instead of hardcoded 1/2 ternary
-  if (currentScore === 0) {
-    const nextPlayer = getNextPlayer(state.currentPlayer, state.playerCount);
-    activateSecondWind(nextPlayer);
-  }
-}
-
 // Function to decide the winner when time runs out
 function determineWinnerMessage() {
   // MULTIPLAYER: support any number of players (not just 1 vs 2)
@@ -946,24 +861,6 @@ function determineWinnerMessage() {
   }
 }
 
-// Function to check if a player can make any moves
-// A player can move if there's at least one empty cell or a cell they own
-function canPlayerMove(playerNumber) {
-  for (let row = 0; row < 12; row = row + 1) {
-    for (let col = 0; col < 6; col = col + 1) {
-      const cell = state.board[row][col];
-
-      // Check if this cell is empty or owned by this player
-      if (cell.count === 0 || cell.owner === playerNumber) {
-        return true; // Found a playable cell
-      }
-    }
-  }
-
-  // No playable cells found
-  return false;
-}
-
 //   GAME CONTROL FUNCTIONS
 
 // Function to restart the game and reset everything to initial state
@@ -982,10 +879,9 @@ function restartGame() {
   state.timeoutPenalties = freshState.timeoutPenalties;
   state.rowRipperCurrentRow = freshState.rowRipperCurrentRow;
   state.turnsCompleted = freshState.turnsCompleted;
-  state.secondWind = freshState.secondWind;
   state.gameOver = false;
   state.message = "Player 1's turn";
-  resetSecondWindEligibility(state.playerCount);
+  resetPlayedFirstMoveByPlayer(state.playerCount);
 
   // Reset timer variables
   isPaused = false;
@@ -1006,7 +902,6 @@ function restartGame() {
   initMoveHistoryUI();
   renderBoard(state);
   updatePlayerDisplay();
-  updateSecondWindDisplay();
   updatePauseButton();
 }
 
@@ -1256,10 +1151,8 @@ function startMoveTimer() {
       moveTimeLeft = MOVE_DURATION_SECONDS;
       updateMoveTimerDisplay();
 
-      // Check if the new current player can move
-      // MULTIPLAYER: if current player cannot move, it's game over
-      // Use score-based winner determination to handle any number of players
-      if (!canPlayerMove(state.currentPlayer)) {
+      // Check if the new current player still has any pieces on the board
+      if (!playerHasPiecesOnBoard(state.currentPlayer)) {
         endGame(determineWinnerMessage());
         return;
       }
