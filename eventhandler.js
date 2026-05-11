@@ -17,6 +17,75 @@ import { playSound } from "./soundmanager.js";
 // Commonly used for login forms, alerts, or confirmations.
 
 let state = null;
+//IMPLEMENTING MOVE HISTORY FEATURE
+
+// Move history tracking keeps a short list of recent moves
+
+//we store the datat in array
+const movesHistory = [];
+const MAX_HISTORY_ITEMS = 5; // keep last 5 moves
+
+// Initialize the Move History UI (clear previous entries)
+function initMoveHistoryUI() {
+  const list = document.getElementById("moveHistoryList");
+  if (list) list.innerHTML = "";
+  movesHistory.length = 0;
+}
+
+// Addind a move to history and update the visible list
+// player: number, row/col: coordinates where the move was made
+function addMoveToHistory(player, row, col) {
+  // Creating a simple record with time
+  const time = new Date();
+  const entry = {
+    player,
+    row,
+    col,
+    // we use toLocaleTimeString to store the datat along with time this Converts a time to a string by using the current or specified locale.
+    time: time.toLocaleTimeString(),
+  };
+
+  // Push and trim...these functions help the array to haev exactly 5 items
+  movesHistory.push(entry);
+  if (movesHistory.length > MAX_HISTORY_ITEMS) movesHistory.shift();
+
+  // Update UI
+  renderMoveHistory();
+}
+
+// Rendering the move history list into the DOM
+function renderMoveHistory() {
+  const list = document.getElementById("moveHistoryList");
+  if (!list) return;
+
+  // Build list items; we have to havenewest at top
+
+  // First Make a copy of the history so we don’t change the original so we use slice
+  const copiedHistory = movesHistory.slice();
+
+  // Reverse it so the latest move comes first so we use reverse()
+  const reversedHistory = copiedHistory.reverse();
+
+  // Building the list step by step
+  let items = "";
+  for (let i = 0; i < reversedHistory.length; i++) {
+    const m = reversedHistory[i];
+
+    // Highlight the most recent move (first one in the reversed list)
+    //     i is the loop counter (starts at 0).
+    // i === 0 means “is this the first item?”
+    // So isLatest will be true only for the first item, and false for all the others.
+
+    const isLatest = i === 0;
+
+    const cls = isLatest ? "move-item latest" : "move-item";
+
+    // Add this move to the list string
+    items += `<li class="${cls}">Player ${m.player} placed at (${m.row}, ${m.col}) <span class="move-time">${m.time}</span></li>`;
+  }
+
+  list.innerHTML = items;
+}
 
 //MULTIPLAYER HELPER FUNCTION
 
@@ -43,7 +112,7 @@ const board = document.getElementById("board");
 const transitionFx = document.getElementById("transitionFx");
 let transitionFxTimeoutId = null;
 
-//CREATE THE BOARD GRID (delayed until player count selected) 
+//CREATE THE BOARD GRID (delayed until player count selected)
 
 // Function to initialize the board grid with 12 rows and 6 columns
 // This must be called AFTER player count is selected, not on page load
@@ -67,7 +136,7 @@ function initializeBoardGrid() {
   }
 }
 
-//  MODAL AND GAME INITIALIZATION 
+//  MODAL AND GAME INITIALIZATION
 
 // Function to show/hide the player selection modal popup
 //  This centralizes the modal visibility so we can easily show/hide it
@@ -118,6 +187,8 @@ function initializeGame(playerCount = 2) {
 
   // STEP 5: Render the initial board state and all UI elements
   renderBoard(state);
+  // Initialize/clear move history UI for a new game
+  initMoveHistoryUI();
   updatePlayerDisplay();
   updateSecondWindDisplay();
 
@@ -164,7 +235,7 @@ function setupPlayerSelectionButtons() {
   });
 }
 
-//   DISPLAY FUNCTIONS  
+//   DISPLAY FUNCTIONS
 
 // Function that redraws the board with current player colors and piece counts
 function renderBoard(currentState) {
@@ -247,7 +318,7 @@ function renderBoard(currentState) {
   updateScoreDisplay(currentState);
 }
 
-//ROW RIPPER POWER-UP LOGIC 
+//ROW RIPPER POWER-UP LOGIC
 
 // Function that activates when an explosion happens on the Row Ripper's current row
 function activateRowRipper(row, currentPlayer) {
@@ -364,7 +435,7 @@ function explodeCell(row, col, currentPlayer, allowTeleport = true) {
   triggerExplosionAt(row, col, currentPlayer, allowTeleport);
 }
 
-//   VISUAL EFFECTS  
+//   VISUAL EFFECTS
 
 // Function to show the transportation/teleport effect banner
 function showTransitionEffect(message = "TRANSPORTATON") {
@@ -392,12 +463,13 @@ function showTransitionEffect(message = "TRANSPORTATON") {
   }
 
   // Hide the banner after a short visible time (3 seconds)
+  // Keep the banner visible longer for power-up messages (8 seconds)
   transitionFxTimeoutId = setTimeout(() => {
     transitionFx.classList.remove("active");
     if (label) {
       label.textContent = "TRANSPORTATON";
     }
-  }, 3000); // 3 seconds visible
+  }, 8000); // 8 seconds visible
 }
 
 // Function to show pulse animation on all cells (teleport effect)
@@ -437,7 +509,7 @@ function showRowRipperEffect(row) {
   }
 }
 
-//   SECOND WIND POWER-UP LOGIC  
+//   SECOND WIND POWER-UP LOGIC
 
 // Function to activate Second Wind for a player
 // Gives them 2 extra turns to play
@@ -506,7 +578,7 @@ function deactivateSecondWind() {
   updateSecondWindDisplay();
 }
 
-//   FORTRESS CELL POWER-UP LOGIC  
+//   FORTRESS CELL POWER-UP LOGIC
 
 // Function called when a player claims a Fortress Cell
 function activateFortressCell(player, row, col) {
@@ -557,13 +629,13 @@ function displayFortressIndicator(player, row, col) {
     playerSpan.textContent = `Player ${player}`;
   }
 
-  // Hide the indicator after 3 seconds
+  // Keep the fortress indicator visible longer so player notices it (5 seconds)
   setTimeout(() => {
     indicator.style.display = "none";
-  }, 3000);
+  }, 5000);
 }
 
-//   GAME LOGIC AND CLICK HANDLER  
+//   GAME LOGIC AND CLICK HANDLER
 
 // Function that handles when a player clicks on a cell
 function handleBoardClick(event) {
@@ -610,6 +682,12 @@ function handleBoardClick(event) {
 
     // Check if the cell is full and needs to explode
     explodeCell(row, col, state.currentPlayer);
+
+    // Record this move in the Move History
+    // The history shows this completed move until the next move occurs
+    // this is why we add this function to handle click function - to stimulate this function every time
+
+    addMoveToHistory(state.currentPlayer, row, col);
 
     // Handle turn switching and Second Wind logic
     handleTurnSwitch();
@@ -680,7 +758,7 @@ function handleTurnSwitch() {
 // Add click listener to the board
 board.addEventListener("click", handleBoardClick);
 
-//   DISPLAY UPDATE FUNCTIONS  
+//   DISPLAY UPDATE FUNCTIONS
 
 // Function to update the display showing whose turn it is
 function updatePlayerDisplay() {
@@ -735,7 +813,7 @@ function updateScoreDisplay(currentState) {
   }
 }
 
-//   GAME STATE CHECKING FUNCTIONS  
+//   GAME STATE CHECKING FUNCTIONS
 
 // Function to check if Second Wind should be activated
 // Activates for a player if the other player has 0 score
@@ -810,7 +888,7 @@ function canPlayerMove(playerNumber) {
   return false;
 }
 
-//   GAME CONTROL FUNCTIONS  
+//   GAME CONTROL FUNCTIONS
 
 // Function to restart the game and reset everything to initial state
 function restartGame() {
@@ -847,6 +925,8 @@ function restartGame() {
   startTimer();
 
   // Redraw everything on screen
+  // Clear move history when restarting the game
+  initMoveHistoryUI();
   renderBoard(state);
   updatePlayerDisplay();
   updateSecondWindDisplay();
@@ -894,7 +974,7 @@ function initRowRipperIndicator() {
   updateIndicatorPosition();
 }
 
-//   START THE GAME  
+//   START THE GAME
 
 // IMPORTANT: The game no longer auto-starts on page load!
 // Instead, we wait for the player selection modal to be interacted with.
@@ -918,7 +998,7 @@ document.addEventListener("DOMContentLoaded", () => {
   showPlayerSelectionModal();
 });
 
-//   EVENT LISTENERS FOR BUTTONS  
+//   EVENT LISTENERS FOR BUTTONS
 
 // Add listener for the restart button
 const restartBtn = document.getElementById("restartBtn");
@@ -932,7 +1012,7 @@ if (pauseBtn) {
   pauseBtn.addEventListener("click", togglePause);
 }
 
-//   TIMER FUNCTIONS  
+//   TIMER FUNCTIONS
 
 // Function to format seconds as MM:SS (like 05:00, 04:59, etc)
 function formatTime(totalSeconds) {
@@ -994,7 +1074,7 @@ function togglePause() {
   updatePauseButton();
 }
 
-//   MAIN GAME TIMER (10 MINUTES)  
+//   MAIN GAME TIMER (10 MINUTES)
 
 // Function to start the countdown timer
 function startTimer() {
@@ -1043,7 +1123,7 @@ function endGame(finalMessage) {
   updatePauseButton();
 }
 
-//   PER-MOVE TIMER (10 SECONDS PER PLAYER)  
+//   PER-MOVE TIMER (10 SECONDS PER PLAYER)
 
 // Function to format time as SS (like 09, 08, etc)
 function formatTimeShort(seconds) {

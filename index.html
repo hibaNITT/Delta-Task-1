@@ -57,6 +57,11 @@
             <div id="moveTimer" class="col-12 col-sm-12 col-md-8"></div>
             <button id="pauseBtn" class="col-12 col-sm-12 col-md-8" aria-pressed="false">Pause</button>
             <button id="restartBtn" class="col-12 col-sm-12 col-md-8">Play Again</button>
+            <!-- Move History: shows the most recent moves. JS will update this dynamically -->
+            <div id="moveHistory" class="col-12 col-sm-12 col-md-4 move-history-box" aria-label="Move History">
+                <h3 class="move-history-title">Move History</h3>
+                <ul id="moveHistoryList" class="move-history-list" aria-live="polite"></ul>
+            </div>
         </section>
         <div class="board-container">
             <div id="rowRipperIndicator" class="row-ripper-indicator" aria-label="Row Ripper power-up indicator"></div>

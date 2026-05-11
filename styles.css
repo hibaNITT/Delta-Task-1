@@ -1090,3 +1090,58 @@ h1 {
     transform: translateY(0);
   }
 }
+
+/* Move History Styling */
+.move-history-box {
+  padding: 12px 14px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  color: #e6eef8;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.move-history-title {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.move-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.move-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid transparent;
+  color: #cfe7ff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.move-item.latest {
+  background: linear-gradient(90deg, rgba(99,102,241,0.12), rgba(14,165,233,0.08));
+  border-color: rgba(99,102,241,0.28);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+
+.move-time {
+  font-size: 0.75rem;
+  color: #9fbbe6;
+  margin-left: 8px;
+  opacity: 0.9;
+}
