@@ -747,7 +747,6 @@ h1 {
     0 0 0 1px rgba(15, 23, 42, 0.55),
     0 0 14px rgba(249, 115, 22, 0.6);
 }
-
 .cell-label {
   font-size: 0.72rem;
   line-height: 1;
@@ -1566,30 +1565,30 @@ h1 {
 /* responsiveness for pieces  */
 @media (max-width: 1024px) {
   .piece {
-    width: 32px;
-    height: 32px;
+    width: 25px;
+    height: 25px;
   }
 }
 
 @media (max-width: 768px) {
   .piece {
-    width: 4px;
-    height: 4px;
-    border-width: 0.2px;
+    width: 20px;
+    height: 20px;
+    border-width: 1.5px;
   }
 }
 
 @media (max-width: 480px) {
   .piece {
-    width: 2px;
-    height: 2px;
-    border-width: 0.2px;
+    width: 10px;
+    height: 10px;
+    border-width: 0.5px;
   }
 }
 
 @media (max-width: 360px) {
   .piece {
-    width: 1px;
-    height: 1px;
+    width: 10px;
+    height: 10px;
   }
 }
