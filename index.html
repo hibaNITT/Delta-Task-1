@@ -238,28 +238,12 @@ So in HTML, the script must be loaded as module in
     <!-- DEBUG SCRIPT for error after deployment -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("%c✅ DOM Loaded Successfully", "color: lime; font-size: 16px");
-
-            console.log("Board element exists:", !!document.getElementById('board'));
-            console.log("Modal elements found:", document.querySelectorAll('.modal, .overlay, #startModal, #playerSelectModal').length);
-
-            // Try common initialization functions
-            const possibleInitFunctions = ['initGame', 'startGame', 'initializeGame', 'showStartModal', 'loadGame'];
-
-            for (let fnName of possibleInitFunctions) {
-                if (typeof window[fnName] === 'function') {
-                    console.log(`Calling ${fnName}()`);
-                    window[fnName]();
-                    break;
-                }
-            }
-
-            if (typeof init === 'function') init();
+            console.log(" DOM Loaded - Starting Chain Reactor", "color:lime;font-size:16px");
         });
     </script>
 
     <script type="module" src="script.js"></script>
-    <script type="module" src="stateManager.js"></script>
+
 </body>
 
 </html>

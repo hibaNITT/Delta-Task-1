@@ -1,9 +1,12 @@
 import { createInitialState } from "./stateManager.js";
 import { playSound } from "./soundManager.js";
 
+// Adding this for debugging
+console.log(" script.js loaded successfully");
+
 // IMPORTANT: Game state is NOW DELAYED until player selection
-// Previously: const state = createInitialState(); (happened immediately on page load)
-// Now: Player selects count then initializeGame() then state created
+// Previously the const state = createInitialState(); (happened immediately on page load)
+// Now the Player selects count then initializeGame() then state created
 // This allows the modal popup to work properly
 
 // what is modal ?
