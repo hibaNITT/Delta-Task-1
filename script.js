@@ -1,8 +1,9 @@
 import { createInitialState } from "./stateManager.js";
-import { playSound } from "./soundManager.js";
+//import { playSound } from "./soundManager.js";
 
 // Adding this for debugging
-console.log(" script.js loaded successfully");
+
+const playSound = () => console.log("🔇 Sound skipped (file missing)");
 
 // IMPORTANT: Game state is NOW DELAYED until player selection
 // Previously the const state = createInitialState(); (happened immediately on page load)
