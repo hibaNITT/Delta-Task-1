@@ -1564,31 +1564,32 @@ h1 {
 }
 
 /* responsiveness for pieces  */
-/* Tablet: Slightly smaller */
 @media (max-width: 1024px) {
   .piece {
-    width: 45px;
-    height: 45px;
+    width: 32px;
+    height: 32px;
   }
 }
 
-/* Mobile: Never go below a touch-friendly size */
 @media (max-width: 768px) {
   .piece {
-    width: 40px;
-    height: 40px;
-    border-width: 1.5px;
-    font-size: 10px; /* Adjust text size if necessary */
+    width: 4px;
+    height: 4px;
+    border-width: 0.2px;
   }
 }
 
-/* Small Mobile: Using 'vw' (viewport width) is often better for grids */
 @media (max-width: 480px) {
   .piece {
-    /* This makes pieces take up roughly 14% of the screen width 
-       assuming a 6-column grid with some margin */
-    width: 14vw;
-    height: 14vw;
-    border-width: 1px;
+    width: 2px;
+    height: 2px;
+    border-width: 0.2px;
+  }
+}
+
+@media (max-width: 360px) {
+  .piece {
+    width: 1px;
+    height: 1px;
   }
 }
