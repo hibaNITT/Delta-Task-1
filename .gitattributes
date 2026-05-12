@@ -1,2 +1,6 @@
+# Exclude Shell scripts from language stats
 *.sh linguist-detectable=false
+
+# Exclude Perl scripts from language stats
 *.pl linguist-detectable=false
+
