@@ -1,5 +1,5 @@
-import { createInitialState } from "./state_manager.js";
-import { playSound } from "./soundmanager.js";
+import { createInitialState } from "./stateManager.js";
+import { playSound } from "./soundManager.js";
 
 // IMPORTANT: Game state is NOW DELAYED until player selection
 // Previously: const state = createInitialState(); (happened immediately on page load)
