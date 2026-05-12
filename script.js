@@ -1,5 +1,5 @@
-import { createInitialState } from "./stateManager.js";
-//import { playSound } from "./soundManager.js";
+import { createInitialState } from "./state-manager.js";
+import { playSound } from "./sound-manager.js";
 
 // Adding this for debugging
 
