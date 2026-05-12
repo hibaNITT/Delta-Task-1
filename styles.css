@@ -1093,6 +1093,18 @@ h1 {
   animation: fade-in 0.25s ease-out;
 }
 
+.game-over-overlay {
+  z-index: 200000;
+  background:
+    radial-gradient(circle at top, rgba(244, 114, 182, 0.26), transparent 28%),
+    radial-gradient(
+      circle at center,
+      rgba(56, 189, 248, 0.18),
+      transparent 48%
+    ),
+    rgba(2, 6, 23, 0.9);
+}
+
 .modal-content {
   width: min(100%, 920px);
   max-height: calc(100vh - 48px);
@@ -1109,6 +1121,117 @@ h1 {
   box-shadow: 0 30px 90px rgba(2, 6, 23, 0.52);
   text-align: center;
   animation: slide-up 0.35s ease-out;
+}
+
+.game-over-card {
+  position: relative;
+  width: min(100%, 560px);
+  padding: 38px 30px 32px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  background:
+    radial-gradient(circle at top, rgba(251, 191, 36, 0.2), transparent 36%),
+    radial-gradient(
+      circle at bottom,
+      rgba(56, 189, 248, 0.14),
+      transparent 42%
+    ),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(12, 18, 32, 0.98));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 32px 90px rgba(2, 6, 23, 0.7),
+    0 0 80px rgba(251, 191, 36, 0.12);
+  overflow: hidden;
+  animation: game-over-pop 0.42s ease-out;
+}
+
+.game-over-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.24),
+    transparent 22%,
+    transparent 78%,
+    rgba(56, 189, 248, 0.24)
+  );
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.game-over-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.game-over-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  background: rgba(251, 191, 36, 0.14);
+  color: #fde68a;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.game-over-card h2 {
+  margin-bottom: 10px;
+  font-size: clamp(1.9rem, 3.4vw, 2.7rem);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 18px rgba(251, 191, 36, 0.18);
+}
+
+.game-over-message {
+  margin-bottom: 22px;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #dbeafe;
+}
+
+.game-over-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.game-over-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.62);
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.game-over-btn {
+  align-self: center;
+  min-width: 180px;
+  box-shadow: 0 18px 30px rgba(249, 115, 22, 0.24);
+}
+
+@keyframes game-over-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.9);
+  }
+  70% {
+    transform: translateY(-4px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 #rulesModal .modal-content {

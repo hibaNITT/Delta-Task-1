@@ -56,6 +56,58 @@ function hidePlayerSelectionModal() {
   setPlayerSelectionModal(false);
 }
 
+function setGameOverModal(visible, message = "") {
+  const modal = document.getElementById("gameOverModal");
+  if (!modal) {
+    console.error("Game over modal not found in HTML");
+    return;
+  }
+
+  const messageElement = document.getElementById("gameOverMessage");
+  if (messageElement && message) {
+    messageElement.textContent = message;
+  }
+
+  modal.style.display = visible ? "flex" : "none";
+  modal.setAttribute("aria-hidden", String(!visible));
+}
+
+function burstGameOverConfetti() {
+  const existingConfetti = document.querySelectorAll(".confetti");
+  existingConfetti.forEach((piece) => piece.remove());
+
+  const colors = ["#f59e0b", "#22d3ee", "#fb7185", "#a78bfa", "#f8fafc"];
+  const pieceCount = 28;
+
+  for (let index = 0; index < pieceCount; index += 1) {
+    const confettiPiece = document.createElement("div");
+    confettiPiece.className = "confetti";
+    confettiPiece.style.left = `${Math.random() * 100}vw`;
+    confettiPiece.style.backgroundColor = colors[index % colors.length];
+    confettiPiece.style.width = `${8 + Math.random() * 8}px`;
+    confettiPiece.style.height = `${12 + Math.random() * 10}px`;
+    confettiPiece.style.borderRadius = index % 3 === 0 ? "999px" : "2px";
+    confettiPiece.style.animationDuration = `${2.6 + Math.random() * 1.2}s`;
+    confettiPiece.style.animationDelay = `${Math.random() * 0.35}s`;
+    confettiPiece.style.transform = `translateY(0) rotate(${Math.random() * 180}deg)`;
+
+    document.body.appendChild(confettiPiece);
+
+    window.setTimeout(() => {
+      confettiPiece.remove();
+    }, 4000);
+  }
+}
+
+function showGameOverModal(finalMessage) {
+  setGameOverModal(true, finalMessage);
+  burstGameOverConfetti();
+}
+
+function hideGameOverModal() {
+  setGameOverModal(false);
+}
+
 //IMPLEMENTING MOVE HISTORY FEATURE
 
 let state = null;
@@ -1163,6 +1215,8 @@ function determineWinnerMessage() {
 function restartGame() {
   console.log("Restarting game...");
 
+  hideGameOverModal();
+
   // MULTIPLAYER: preserve the current player count when restarting
   // Instead of createInitialState() which defaults to 2 players,
   // pass state.playerCount to keep the same game mode (3/4/5/6 players)
@@ -1290,6 +1344,11 @@ if (restartBtn) {
   restartBtn.addEventListener("click", restartGame);
 }
 
+const gameOverRestartBtn = document.getElementById("gameOverRestartBtn");
+if (gameOverRestartBtn) {
+  gameOverRestartBtn.addEventListener("click", restartGame);
+}
+
 // Add listener for the pause button
 const pauseBtn = document.getElementById("pauseBtn");
 if (pauseBtn) {
@@ -1401,6 +1460,7 @@ function endGame(finalMessage) {
   if (statusElement) {
     statusElement.textContent = finalMessage;
   }
+  showGameOverModal(finalMessage);
 
   // Remove click listener so no more moves can be made
   board.removeEventListener("click", handleBoardClick);

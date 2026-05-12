@@ -221,6 +221,16 @@
         </div>
     </main>
 
+    <div id="gameOverModal" class="modal-overlay game-over-overlay" style="display: none;" aria-hidden="true">
+        <div class="modal-content game-over-card" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle"
+            aria-describedby="gameOverMessage">
+
+            <h2 id="gameOverTitle">Game Over</h2>
+
+            <button id="gameOverRestartBtn" class="play-btn game-over-btn">Play Again</button>
+        </div>
+    </div>
+
     <!-- import/export only work in JavaScript modules.
 So in HTML, the script must be loaded as module in
      or else it will be treated as a normal script -->
