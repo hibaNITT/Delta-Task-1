@@ -3,7 +3,7 @@ import { playSound } from "./sound-manager.js";
 
 // Adding this for debugging
 
-const playSound = () => console.log("🔇 Sound skipped (file missing)");
+//const playSound = () => console.log("🔇 Sound skipped (file missing)");
 
 // IMPORTANT: Game state is NOW DELAYED until player selection
 // Previously the const state = createInitialState(); (happened immediately on page load)
