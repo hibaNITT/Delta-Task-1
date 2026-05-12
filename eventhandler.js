@@ -418,10 +418,34 @@ function activateRowRipper(row, currentPlayer) {
   for (let col = 0; col < state.board[row].length; col = col + 1) {
     const cell = state.board[row][col];
 
+    // Respect fortress protection: skip enemy-owned fortress cells
+    const isFortress = cell.isFortress;
+    const fortressOwnedByOther =
+      isFortress && cell.owner !== null && cell.owner !== currentPlayer;
+
+    if (fortressOwnedByOther) {
+      // Fortress blocks row-ripper captures for enemy-owned fortress
+      continue;
+    }
+
+    // If this is an unclaimed fortress that will be claimed by row-ripper,
+    // remember that so we can trigger the fortress claim UI.
+    const willClaimUnclaimedFortress =
+      isFortress && cell.owner === null && cell.count === 0;
+
     if (cell.count === 0) {
       // Empty cell: place one piece for the current player
       cell.owner = currentPlayer;
       cell.count = 1;
+
+      // If this was an unclaimed fortress, trigger the fortress claim effects
+      if (willClaimUnclaimedFortress) {
+        try {
+          activateFortressCell(currentPlayer, row, col);
+        } catch (e) {
+          console.warn("Failed to activate fortress UI:", e);
+        }
+      }
     } else if (cell.owner === currentPlayer) {
       // Already owned by current player: add one more piece
       cell.count = cell.count + 1;
@@ -998,26 +1022,8 @@ function handleBoardClick(event) {
       activateChaosDrift(previousPlayer, state.currentPlayer);
     }
 
-    // If a lockdown was active against the player who just moved, decrement the turns left
-    if (
-      state.powerups &&
-      state.powerups.lockdown &&
-      state.powerups.lockdown.player === previousPlayer &&
-      state.powerups.lockdown.turnsLeft > 0
-    ) {
-      state.powerups.lockdown.turnsLeft = state.powerups.lockdown.turnsLeft - 1;
-      // notify when lockdown ends
-      if (state.powerups.lockdown.turnsLeft <= 0) {
-        showPowerupIcon(
-          "lockdown.png",
-          `LOCKDOWN ended for P${previousPlayer}`,
-          2200,
-        );
-        state.powerups.lockdown.player = null;
-        state.powerups.lockdown.turnsLeft = 0;
-        updatePowerupPanel();
-      }
-    }
+    // NOTE: lockdown turns are decremented in handleTurnSwitch so they count
+    // even when the targeted player cannot make a placement. See handleTurnSwitch().
 
     if (playerIsEliminated(state.currentPlayer)) {
       renderBoard(state);
@@ -1050,12 +1056,40 @@ function handleBoardClick(event) {
 
 // Function to handle switching turns between players
 function handleTurnSwitch() {
+  // Determine the player who is finishing their turn
+  const previousPlayer = state.currentPlayer;
+
   // Normal turn switch
   state.currentPlayer = getNextPlayer(state.currentPlayer, state.playerCount);
 
   // Update the message and turn counter
   state.message = `Player ${state.currentPlayer}'s turn`;
   state.turnsCompleted = state.turnsCompleted + 1;
+
+  // If a lockdown was active against the player who just finished a turn,
+  // decrement the remaining turns. This ensures the lockdown counts the
+  // locked player's actual turns (including turns where they couldn't place).
+  if (
+    state.powerups &&
+    state.powerups.lockdown &&
+    state.powerups.lockdown.player === previousPlayer &&
+    state.powerups.lockdown.turnsLeft > 0
+  ) {
+    state.powerups.lockdown.turnsLeft = state.powerups.lockdown.turnsLeft - 1;
+
+    if (state.powerups.lockdown.turnsLeft <= 0) {
+      showPowerupIcon(
+        "lockdown.png",
+        `LOCKDOWN ended for P${previousPlayer}`,
+        2200,
+      );
+      state.powerups.lockdown.player = null;
+      state.powerups.lockdown.turnsLeft = 0;
+      updatePowerupPanel();
+    } else {
+      updatePowerupPanel();
+    }
+  }
 }
 
 // Add click listener to the board
