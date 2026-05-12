@@ -632,12 +632,21 @@ h1 {
 }
 
 #board {
+  flex: 1; /* board takes remaining space */
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(12, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: repeat(12, minmax(0, 1fr));
   gap: 8px;
-  width: 100%;
   max-width: 960px;
+}
+
+.board-container {
+  position: relative;
+  display: flex; /* place indicator + board side by side */
+  align-items: flex-start;
+  width: min(100%, 960px);
+  margin: 0 auto;
+  padding-left: 70px; /* space for row-ripper indicator */
 }
 
 #board.paused {
@@ -801,8 +810,7 @@ h1 {
 
 .row-ripper-indicator {
   position: absolute;
-  top: 0;
-  left: -72px;
+  left: 6px; /* sits in the padding-left space */
   width: 56px;
   height: 56px;
   background-image: url("./powerUpIcons/rowRipper.png");
@@ -812,9 +820,9 @@ h1 {
   border: 2px solid #fbbf24;
   border-radius: 10px;
   box-shadow: 0 0 16px rgba(251, 191, 36, 0.75);
-  transition: transform 0.3s ease-out;
+  transition: top 0.3s ease-out;
   pointer-events: none;
-  z-index: 5;
+  z-index: 10;
 }
 
 .cell.row-ripper-pulse {
@@ -1519,6 +1527,7 @@ h1 {
 
   .board-container {
     margin-left: 0;
+    padding-left: 65px; /* adjust padding for mobile screens */
   }
 
   .controls-row {

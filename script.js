@@ -1297,9 +1297,8 @@ function initRowRipperIndicator() {
         boardPosition.top +
         (cellPosition.height - indicatorHeight) / 2;
 
-      // Update the indicator position
+      // Update the indicator position (left position is set in CSS)
       indicator.style.top = `${topOffset}px`;
-      indicator.style.left = "-72px";
     }
   };
 
