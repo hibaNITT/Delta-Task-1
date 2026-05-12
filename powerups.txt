@@ -4,7 +4,6 @@ appears on the row randomly and if an explosion happens in that row then the eff
 2. Fortress Cell - once you take ownership of that cell, when their explosion happens they cant take ownership
 only of you coins explode you can move out and they can take ownership -  we can keep special neon green colour cells
 
-3. Bonus - after 20 explosions +5
 
  sabotage 
 

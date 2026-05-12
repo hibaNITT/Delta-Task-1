@@ -1,24 +1,64 @@
 import { createInitialState } from "./state_manager.js";
 import { playSound } from "./soundmanager.js";
 
-// GAME STATE AND SETUP\
-
 // IMPORTANT: Game state is NOW DELAYED until player selection
 // Previously: const state = createInitialState(); (happened immediately on page load)
 // Now: Player selects count then initializeGame() then state created
 // This allows the modal popup to work properly
 
 // what is modal ?
-
 // A modal is a UI element that appears on top of the main content.
-
 // It usually dims the background and forces the user to interact with it before returning to the page.
-
 // Commonly used for login forms, alerts, or confirmations.
 
-let state = null;
+//IMPLEMENTING A MODAL TO DISPLAY THE RULES
+function rulesModal(visible) {
+  const modal = document.getElementById("rulesModal");
+  if (!modal) {
+    console.error("rules modal not found in HTML");
+    return;
+  }
+
+  // Display modal as flex overlay (centered) or hide it completely
+  modal.style.display = visible ? "flex" : "none";
+}
+
+// Function to show the player selection modal
+function showRulesModal() {
+  rulesModal(true);
+}
+
+// Function to hide the player selection modal
+function hideRulesModal() {
+  rulesModal(false);
+}
+
+// Function to show/hide the player selection modal popup
+//  This centralizes the modal visibility so we can easily show/hide it
+function setPlayerSelectionModal(visible) {
+  const modal = document.getElementById("playerSelectionModal");
+  if (!modal) {
+    console.error("Player selection modal not found in HTML");
+    return;
+  }
+
+  // Display modal as flex overlay (centered) or hide it completely
+  modal.style.display = visible ? "flex" : "none";
+}
+
+// Function to show the player selection modal
+function showPlayerSelectionModal() {
+  setPlayerSelectionModal(true);
+}
+
+// Function to hide the player selection modal
+function hidePlayerSelectionModal() {
+  setPlayerSelectionModal(false);
+}
+
 //IMPLEMENTING MOVE HISTORY FEATURE
 
+let state = null;
 // to count the number of explosions
 let reactionScoreContext = null;
 
@@ -176,31 +216,6 @@ function initializeBoardGrid() {
   }
 }
 
-//  MODAL AND GAME INITIALIZATION
-
-// Function to show/hide the player selection modal popup
-//  This centralizes the modal visibility so we can easily show/hide it
-function setPlayerSelectionModal(visible) {
-  const modal = document.getElementById("playerSelectionModal");
-  if (!modal) {
-    console.error("Player selection modal not found in HTML");
-    return;
-  }
-
-  // Display modal as flex overlay (centered) or hide it completely
-  modal.style.display = visible ? "flex" : "none";
-}
-
-// Function to show the player selection modal
-function showPlayerSelectionModal() {
-  setPlayerSelectionModal(true);
-}
-
-// Function to hide the player selection modal
-function hidePlayerSelectionModal() {
-  setPlayerSelectionModal(false);
-}
-
 // Function to initialize the game after player count is selected
 // WHY: Game was starting immediately on page load; now it waits for player selection
 // This function is called when user clicks a player count button
@@ -248,11 +263,25 @@ function initializeGame(playerCount = 2) {
   board.addEventListener("click", handleBoardClick);
 }
 
+//Fuctions to set up the start playing button in rules modal!!
+
+function setRulesModalButton() {
+  const button = document.querySelector(".play-btn");
+  if (!button) {
+    return;
+  }
+
+  //this is to wire the button to this flow
+  button.addEventListener("click", () => {
+    hideRulesModal();
+    showPlayerSelectionModal();
+  });
+}
+
 // Function to set up click handlers on all player selection buttons
-// Buttons need to know when clicked to start the game with selected count
 // This runs when page loads (in DOMContentLoaded event)
+
 function setupPlayerSelectionButtons() {
-  // Find all buttons with class "player-btn" (2/3/4/5/6 player buttons)
   const buttons = document.querySelectorAll(".player-btn");
 
   // Add click event listener to each button
@@ -1207,13 +1236,16 @@ function initRowRipperIndicator() {
 
 // Event listener that runs when the HTML document is fully loaded
 document.addEventListener("DOMContentLoaded", () => {
+  // Show the rules first, then reveal player selection only after Start Playing.
+  showRulesModal();
+  hidePlayerSelectionModal();
+
   // Step 1: Attach click handlers to all player selection buttons
   // This makes the 2/3/4/5/6 player buttons functional
   setupPlayerSelectionButtons();
 
-  // Step 2: Show the player selection modal (the popup for choosing player count)
-  // The modal is initially hidden in the HTML; this makes it visible
-  showPlayerSelectionModal();
+  // Step 2: Wire the rules modal start button so it opens player selection
+  setRulesModalButton();
 });
 
 //   EVENT LISTENERS FOR BUTTONS

@@ -12,10 +12,102 @@
 
 <body>
 
+    <!-- why do we use aria label - It gives a meaningful label to elements that
+      would otherwise be inaccessible or confusing. So its good practice -->
+
+    <div id="rulesModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h1>WELCOME TO THE GAME - ENTROPY!!!!</h1>
+            <h2>RULES OF THE GAME</h2>
+            <p class="modal-subtitle">Read these carefully before playing =_=</p>
+            <div class="rules-display">
+
+                <div>
+                    <p class="rules">ENTROPY is a strategic turn-based game played on a 6*12 grid.
+                        1.Each cell has a capacity equal to its number of orthogonal neighbors: 2 for corners, 3 for
+                        edge cells, and 4 for interior
+                        cells. On your turn, you must add one unit to a cell:
+
+                        2.Your very first move can be placed in any empty cell (starting with capacity - 1 units).
+                        After that, you can only place on cells that already contain your own units.
+
+                        3.After placing, if any cell reaches its capacity, it explodes: the cell is cleared, and one
+                        unit
+                        is sent to each orthogonal neighbor. This can trigger a chain reaction of further explosions.
+                        Any units (yours or your opponent’s) that are present in cells affected by the explosions are
+                        captured and converted to the player who triggered the explosion.So that player becomes its
+                        owner
+
+                        4.The game is played with the players taking next to next turns. Each player has a turn timer of
+                        10 seconds
+                        and there is a shared game timer of 10 minutes.
+                        NOTE- If a player does not complete his move within 10 sec - 5 points will be deducted from his
+                        score.
+                        If his score is less that 5 he will get a 0.
+
+                        5.The game ends when:
+                        All units on the board belong to a single player, or The overall game timer expires then the
+                        highest score wins.
+
+                        6.A player's score is the sum of the number of opponent units captured and the length of chain
+                        reactions
+                        triggered.
+
+                        7.Teleportation - Some of the cells are coloured(do not consider the green cell). These colored
+                        cells are in
+                        pairs. If an explosion occurs in that cell then that explosion is transfered to the location
+                        where the cell
+                        of the same color is placed(basically the two cells of the same color are partners)
+                        NOTE - This can be very helpful when you want to escape that place.
+
+                        8. This game has 2 cool POWER UPS-
+                        - Row Ripper : This power up moves along a vertical path outside the board , if you manage to
+                        cause
+                        an explosion exactly on the row where the row ripper is present then all the cells in that row
+                        becomes yours.
+                        If the cell was
+                        - empty : then one of your piece will be placed on that cell
+                        - owned by you : one of ur piece is added
+                        - owned by another player : his pieces will vanish and one of ur piece is added
+
+
+
+                        - Fortress Cell : once you take ownership of the neon green colour cells you will be safe. If
+                        the opponent
+                        tries to capture the contents on this cell, this feature will protect you.
+                        You will lose ownership only if your pieces explode and move out then the next player is free to
+                        capture this
+                        cell
+
+                        9. This Game also has two evil SABOTAGES -
+
+                        - Lockdown: your move should stimulate exactly 3 explosions during the chain reaction not more
+                        not less. Then for the next 3 turns, your opponent cannot trigger their explosions.
+                        They can only place pieces in cells that are below maximum capacity.
+
+                        -Chaos Drift : your move should stimulate exactly 5 explosions during the chain reaction not
+                        more not less
+                        This Randomizes the opponent’s next move —instead of choosing freely, their piece lands in a
+                        random valid cell.
+
+
+
+                        Plan your moves carefully — one well-placed unit can trigger a massive chain reaction
+                        that reshapes the entire board!
+                        Good luck, and may your reactions be explosive!</p>
+                </div>
+
+                <button class="play-btn">
+                    <span class="play-btn-label">Start Playing</span>
+                </button>
+
+            </div>
+        </div>
+    </div>
     <!-- query to take input of number of players -->
     <!-- this is to be rendered before main so -->
 
-    <div id="playerSelectionModal" class="modal-overlay">
+    <div id="playerSelectionModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h2>Select Number of Players</h2>
             <p class="modal-subtitle">How many players will play?</p>
@@ -49,30 +141,81 @@
             <span class="transition-label">TRANSPORTATON</span>
             <span class="rocket-trail" aria-hidden="true"></span>
         </div>
-        <h1>Chain Reaction</h1>
-        <section class="layout-grid" aria-label="Game info and controls">
-            <div id="status" class="col-12 col-sm-12 col-md-8"></div>
-            <div id="powerupPanel" class="col-12 col-sm-12 col-md-8 powerup-panel" aria-live="polite"></div>
-            <div id="score" class="col-12 col-sm-12 col-md-8"></div>
-            <div id="timer" class="col-12 col-sm-12 col-md-8"></div>
-            <div id="moveTimer" class="col-12 col-sm-12 col-md-8"></div>
-            <button id="pauseBtn" class="col-12 col-sm-12 col-md-8" aria-pressed="false">Pause</button>
-            <button id="restartBtn" class="col-12 col-sm-12 col-md-8">Play Again</button>
-            <!-- Move History: shows the most recent moves. JS will update this dynamically -->
-            <div id="moveHistory" class="col-12 col-sm-12 col-md-4 move-history-box" aria-label="Move History">
-                <h3 class="move-history-title">Move History</h3>
-                <ul id="moveHistoryList" class="move-history-list" aria-live="polite"></ul>
-            </div>
-        </section>
-        <div class="board-container">
-            <div id="rowRipperIndicator" class="row-ripper-indicator" aria-label="Row Ripper power-up indicator"></div>
-            <div id="fortressCellIndicator" class="fortress-cell-indicator"
-                aria-label="Fortress Cell power-up indicator" style="display: none;">
-                <img src="powerUpIcons/fortressCell.png" alt="Fortress Cell Activated" class="fortress-cell-icon" />
-                <span class="fortress-cell-text">FORTRESS CLAIMED</span>
-                <span class="fortress-cell-player">Player 1</span>
-            </div>
-            <div id="board" aria-label="Game board"></div>
+        <h1> ⚡ ♨︎_♨︎ ENTROPY ♨︎_♨︎ ⚡</h1>
+
+        <!-- HUD stands for Heads-Up Display. -->
+        <!-- the HUD is the on-screen information panel that shows the player all the 
+         important game data in real-time without obstructing the main gameplay area. This is why we use hud-->
+
+
+        <div class="game-shell" aria-label="Game info and board layout">
+            <aside class="hud-column">
+                <section id="status" class="hud-card"></section>
+                <section id="score" class="hud-card"></section>
+                <section id="timer" class="hud-card"></section>
+                <section id="moveTimer" class="hud-card"></section>
+                <section id="powerupPanel" class="hud-card powerup-panel" aria-live="polite"></section>
+                <div class="controls-row">
+                    <button id="pauseBtn" aria-pressed="false">Pause</button>
+                    <button id="restartBtn">Play Again</button>
+                </div>
+                <section id="moveHistory" class="hud-card move-history-box" aria-label="Move History">
+                    <h3 class="move-history-title">Move History</h3>
+                    <ul id="moveHistoryList" class="move-history-list" aria-live="polite"></ul>
+                </section>
+                <section class="hud-card powerup-catalog" aria-labelledby="powerupCatalogTitle">
+                    <div class="catalog-header">
+                        <h3 id="powerupCatalogTitle">Power Ups &amp; Sabotages</h3>
+                        <p>Quick reference for the icons and special effects used on the board.</p>
+                    </div>
+                    <div class="catalog-list">
+                        <article class="catalog-item">
+                            <img src="powerUpIcons/rowRipper.png" alt="Row Ripper icon" />
+                            <div>
+                                <h4>Row Ripper</h4>
+                                <p>Triggers a row-wide sweep when an explosion lands on the moving indicator row.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-item">
+                            <img src="powerUpIcons/fortressCell.png" alt="Fortress Cell icon" />
+                            <div>
+                                <h4>Fortress Cell</h4>
+                                <p>A protected neon-green cell that blocks enemy capture until your pieces leave it.</p>
+                            </div>
+                        </article>
+                        <article class="catalog-item">
+                            <img src="powerUpIcons/lockdown.png" alt="Lockdown sabotage icon" />
+                            <div>
+                                <h4>Lockdown</h4>
+                                <p>Forces a target player to avoid explosion-triggering moves for the next three turns.
+                                </p>
+                            </div>
+                        </article>
+                        <article class="catalog-item">
+                            <img src="powerUpIcons/chaosDrift.png" alt="Chaos Drift sabotage icon" />
+                            <div>
+                                <h4>Chaos Drift</h4>
+                                <p>Randomizes the target player’s next placement so they lose direct control of the
+                                    move.</p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+            </aside>
+            <section class="board-column">
+                <div class="board-container">
+                    <div id="rowRipperIndicator" class="row-ripper-indicator"
+                        aria-label="Row Ripper power-up indicator"></div>
+                    <div id="fortressCellIndicator" class="fortress-cell-indicator"
+                        aria-label="Fortress Cell power-up indicator" style="display: none;">
+                        <img src="powerUpIcons/fortressCell.png" alt="Fortress Cell Activated"
+                            class="fortress-cell-icon" />
+                        <span class="fortress-cell-text">FORTRESS CLAIMED</span>
+                        <span class="fortress-cell-player">Player 1</span>
+                    </div>
+                    <div id="board" aria-label="Game board"></div>
+                </div>
+            </section>
         </div>
     </main>
 

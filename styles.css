@@ -8,16 +8,17 @@ body {
   padding: 16px;
   display: flex;
   justify-content: center;
-  background: #0f172a;
+  background: linear-gradient(180deg, #000000 0%, #3b2c55 42%, #000000 100%);
   color: #e2e8f0;
-  font-family: Arial, sans-serif;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
 }
 
 .page {
-  width: min(100%, 960px);
+  width: min(100%, 1360px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  align-items: stretch;
   .cell.teleport-a,
   .cell.teleport-b,
   .cell.teleport-c,
@@ -109,6 +110,220 @@ body {
 
   .cell.fortress-cell {
     animation: fortress-pulse-glow 2s ease-in-out infinite;
+  }
+}
+
+#transitionFx {
+  width: min(100%, 960px);
+  min-height: 58px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.95),
+    rgba(30, 41, 59, 0.95)
+  );
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  pointer-events: none;
+
+  /* Center the banner in the viewport (both horizontally and vertically) */
+  position: fixed;
+  /* Place banner at top-center so it's visible while scrolling */
+  top: 20px;
+  left: 50%;
+
+  /* Moves the element horizontally to the left by 50% of its own width. */
+  transform: translateX(-50%) scale(1);
+
+  overflow: hidden;
+  isolation: isolate;
+
+  /* Appear above all other content and stay visible when scrolling */
+  z-index: 99999;
+}
+
+.game-shell {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.hud-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.board-column {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.hud-card {
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.92),
+    rgba(30, 41, 59, 0.9)
+  );
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.28);
+}
+
+.hud-column #status,
+.hud-column #score,
+.hud-column #timer,
+.hud-column #moveTimer {
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.hud-column .powerup-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 56px;
+}
+
+.hud-column .powerup-entry {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.controls-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.controls-row button {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(
+    180deg,
+    rgba(37, 99, 235, 0.95),
+    rgba(29, 78, 216, 0.95)
+  );
+  color: #f8fafc;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+
+.controls-row button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+}
+
+.controls-row button:active {
+  transform: translateY(0);
+}
+
+.powerup-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.catalog-header h3 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.catalog-header p {
+  margin: 0;
+  color: #9fb0c6;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.catalog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catalog-item {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.catalog-item img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.22));
+}
+
+.catalog-item h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.98rem;
+  color: #f8fafc;
+}
+
+.catalog-item p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.board-container {
+  position: relative;
+  width: min(100%, 960px);
+  margin-left: auto;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 960px;
+}
+
+@media (max-width: 1100px) {
+  .game-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .board-column {
+    justify-content: center;
+  }
+
+  .board-container {
+    margin-left: 0;
+  }
+
+  .controls-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -629,21 +844,6 @@ h1 {
   }
 }
 
-.board-container {
-  position: relative;
-  width: min(100%, 960px);
-  margin: 0 auto;
-}
-
-#board {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(12, 1fr);
-  gap: 8px;
-  width: 100%;
-  max-width: 960px;
-}
-
 #board.paused {
   opacity: 0.85;
 }
@@ -878,125 +1078,154 @@ h1 {
 
 /* PLAYER SELECTION MODAL STYLES */
 
-/* Modal overlay - dark semi-transparent background that covers entire screen */
-/* this overlay feature helps it to appear as a pop up ...yayyyy */
 .modal-overlay {
-  /* Position: fixed keeps it in place even if page scrolls */
   position: fixed;
-  /* Top, left, right, bottom = 0 makes it cover entire viewport */
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* Dark semi-transparent background to dim the page behind modal */
-  background-color: rgba(0, 0, 0, 0.7);
-  /* Flexbox centers the modal content both horizontally and vertically */
+  inset: 0;
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.15), transparent 34%),
+    rgba(2, 6, 23, 0.82);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  /* z-index puts modal on top of all other page content */
+  padding: 24px;
   z-index: 1000;
-  /* Animation: fade in when modal appears */
-  animation: fade-in 0.3s ease-out;
+  animation: fade-in 0.25s ease-out;
 }
 
-/* Modal content box - the white card that holds the player selection */
 .modal-content {
-  /* White background for the modal card */
-  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
-  /* Padding creates space inside the box around the text and buttons */
-  padding: 48px 40px;
-  /* border-radius rounds the corners */
-  border-radius: 16px;
-  /* box-shadow creates depth and makes it appear to float */
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  /* max-width limits how wide the modal can be */
-  max-width: 500px;
-  /* width: 90% makes it responsive on mobile */
-  width: 90%;
-  /* text-align centers all text inside */
+  width: min(100%, 920px);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 32px;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.98),
+    rgba(30, 41, 59, 0.96)
+  );
+  color: #e2e8f0;
+  box-shadow: 0 30px 90px rgba(2, 6, 23, 0.52);
   text-align: center;
-  /* Animation: slide up when modal appears */
-  animation: slide-up 0.4s ease-out;
+  animation: slide-up 0.35s ease-out;
 }
 
-/* Heading inside the modal */
+#rulesModal .modal-content {
+  text-align: left;
+}
+
+#rulesModal h1 {
+  margin: 0 0 12px 0;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .modal-content h2 {
   margin: 0 0 16px 0;
-  font-size: 28px;
+  font-size: clamp(1.35rem, 2vw, 1.9rem);
   font-weight: 800;
-  color: #1a1a1a;
-  letter-spacing: 0.5px;
+  color: #f8fafc;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-/* Subtitle text under the heading */
 .modal-content .modal-subtitle {
-  margin: 0 0 32px 0;
-  font-size: 16px;
-  color: #666666;
+  margin: 0 0 24px 0;
+  font-size: 1rem;
+  color: #94a3b8;
   font-weight: 500;
 }
 
-/* Container for the player selection buttons */
-.player-selector {
-  /* Flex layout stacks buttons vertically */
+.rules-display {
   display: flex;
   flex-direction: column;
-  /* gap creates space between buttons */
+  gap: 20px;
+}
+
+.rules {
+  margin: 0;
+  line-height: 1.7;
+  color: #cbd5e1;
+  white-space: pre-line;
+}
+
+.play-btn {
+  align-self: flex-end;
+  padding: 14px 20px;
+  border: 1px solid rgba(56, 189, 248, 0.26);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f97316 0%, #fb7185 100%);
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+
+.play-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.24);
+}
+
+.play-btn:active {
+  transform: translateY(0);
+}
+
+.player-selector {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
 }
 
-/* Player selection button styling */
 .player-btn {
-  /* Gradient background makes buttons visually appealing */
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  /* Blue border */
-  border: 2px solid #1e40af;
-  /* White text */
-  color: white;
-  /* Padding creates space inside button */
-  padding: 16px 24px;
-  /* Rounded corners */
-  border-radius: 12px;
-  /* Large font size for easy reading */
-  font-size: 16px;
-  /* Bold text weight */
-  font-weight: 700;
-  /* Pointer cursor shows it's clickable */
+  min-width: 132px;
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+  border: 1px solid rgba(34, 197, 94, 0.36);
+  color: #fff;
+  padding: 16px 22px;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 800;
   cursor: pointer;
-  /* Smooth transition for hover effects */
-  transition: all 0.2s ease;
-  /* Flex inside button to center content */
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 
-/* Hover effect - button gets brighter and scales up slightly */
 .player-btn:hover {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-  border-color: #1e3a8a;
+  filter: brightness(1.08);
+  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.22);
 }
 
-/* Active/clicked effect - button appears pressed */
 .player-btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
 }
 
-/* Large number inside the button */
 .player-btn-number {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 900;
 }
 
-/* Label text inside the button */
 .player-btn-label {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Animation: fade in effect for modal appearance */
