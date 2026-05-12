@@ -716,6 +716,7 @@ h1 {
   justify-content: center;
   gap: 2px;
   font-size: 0.9rem;
+  border-radius: 20%;
 }
 
 .cell:hover {
