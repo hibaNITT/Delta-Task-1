@@ -1397,8 +1397,10 @@ function startMoveTimer() {
       moveTimeLeft = MOVE_DURATION_SECONDS;
       updateMoveTimerDisplay();
 
-      // Check if the new current player still has any pieces on the board
-      if (!playerHasPiecesOnBoard(state.currentPlayer)) {
+      //this is applied to avoid the case that if the player takes more than 10s to place a piece on board
+      // and it shows a tie
+      // Check if the new current player is eliminated (has played first move and has no pieces)
+      if (playerIsEliminated(state.currentPlayer)) {
         renderBoard(state);
         endGame(determineWinnerMessage());
         return;
