@@ -1120,6 +1120,19 @@ function restartGame() {
   isPaused = false;
   timeLeft = GAME_DURATION_SECONDS;
 
+  // Rebuild the board DOM to ensure cells/dataset attributes are consistent
+  initializeBoardGrid();
+
+  // Reattach the board click handler to guarantee it is active - to avoid cases where it is not detecting clicks
+  // after clicking play again
+
+  try {
+    board.removeEventListener("click", handleBoardClick);
+  } catch (e) {
+    // ignore if not attached
+  }
+  board.addEventListener("click", handleBoardClick);
+
   // Reset and start the per-move timer
   stopMoveTimer();
   moveTimeLeft = MOVE_DURATION_SECONDS;
