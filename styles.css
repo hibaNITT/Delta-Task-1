@@ -1573,23 +1573,23 @@ h1 {
 
 @media (max-width: 768px) {
   .piece {
-    width: 10px;
-    height: 10px;
-    border-width: 0.5px;
+    width: 4px;
+    height: 4px;
+    border-width: 0.2px;
   }
 }
 
 @media (max-width: 480px) {
   .piece {
-    width: 4px;
-    height: 4px;
-    border-width: 0.5px;
+    width: 2px;
+    height: 2px;
+    border-width: 0.2px;
   }
 }
 
 @media (max-width: 360px) {
   .piece {
-    width: 2px;
-    height: 2px;
+    width: 1px;
+    height: 1px;
   }
 }
