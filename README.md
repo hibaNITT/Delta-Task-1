@@ -84,5 +84,4 @@ Live URL:
 
 ## Acknowledgements
 
-Developed by Hiba for Delta Task 1
-Thanks to the Delta Force team for the inspiration.
+Developed by Hiba for Delta Task 1 . Thanks to the Delta Force team for the inspiration.
