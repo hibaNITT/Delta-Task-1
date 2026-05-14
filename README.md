@@ -8,6 +8,14 @@ Players take turns placing pieces on a 6 x 12 board, triggering explosions, capt
 
 Play here: [https://hibanitt.github.io/Delta-Task-1/](https://hibanitt.github.io/Delta-Task-1/)
 
+## ScreenShots
+<img width="1897" height="865" alt="image" src="https://github.com/user-attachments/assets/2e9658dd-de01-4596-851a-b2d04e3c272d" />
+<img width="1852" height="824" alt="image" src="https://github.com/user-attachments/assets/aaff4b38-b9c1-4869-acc8-4f3590bdb246" />
+<img width="1876" height="833" alt="image" src="https://github.com/user-attachments/assets/71b4a1c1-e16b-4f50-b7dc-5aa3a47dadf7" />
+<img width="1015" height="681" alt="image" src="https://github.com/user-attachments/assets/3c654122-d35a-45e1-8605-83448ae72c37" />
+<img width="1882" height="837" alt="image" src="https://github.com/user-attachments/assets/2c5843ca-959a-4789-bda9-b28e0a765b4a" />
+
+
 ## Project Highlights
 
 - Multiplayer support for 2 to 6 players
