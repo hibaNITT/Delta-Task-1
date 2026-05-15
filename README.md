@@ -54,6 +54,36 @@ Play here: [https://hibanitt.github.io/Delta-Task-1/](https://hibanitt.github.io
 - CSS3
 - JavaScript (ES Modules)
 
+## Modes finished
+
+Normal Mode 
+
+Core Mechanics: Implement the 6x12 grid with "Explode on Cap" logic. Capacity is equal to the number of neighbors (i.e. corner cells have capacity as 2, edge cells 3 and others 4 for a rectangular grid). On every explosion, redistribution occurs and the neighbors must also be checked for possibility of explosion.
+
+Movement: Fully functional turn-based system (2 player).
+
+Responsiveness: A mobile-friendly UI that scales to different screen sizes.
+
+Essentials: Basic sound effects and a functioning scoring system. It must be timer based (both per person and overall), with pause and resume features.
+
+Hacker Mode
+
+Teleportation: Specific cells act as portals, instantly transporting units across the board.
+
+Move History: A visual display of all previous moves and a leaderboard ranked by the score.
+
+Power-Ups: Implement bombs (that burst and clear out all cells in a predefined radius) and other tactical boosts to disrupt the opponent.
+
+Multiplayer Mode: Support for more than 2 players
+
+Hacker++ Mode
+
+
+
+Animations: Placing, exploding and bonding of elements within a grid must be animated.
+
+
+
 ## Project Structure
 
 - [index.html](index.html) - Main page layout, game HUD, modals, board container
