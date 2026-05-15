@@ -384,6 +384,7 @@ async function handleBoardClick(event) {
         alert(
           `No valid cells available for Player ${state.currentPlayer} (Chaos Drift).`,
         );
+        endGame(determineWinnerMessage());
         return;
       }
       const pick = valid[Math.floor(Math.random() * valid.length)];
