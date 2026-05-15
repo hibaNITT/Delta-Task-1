@@ -6,6 +6,8 @@ Players take turns placing pieces on a 6 x 12 board, triggering explosions, capt
 
 ## Live Website
 
+Deployed on Github
+
 Play here: [https://hibanitt.github.io/Delta-Task-1/](https://hibanitt.github.io/Delta-Task-1/)
 
 ## ScreenShots
@@ -34,6 +36,8 @@ Play here: [https://hibanitt.github.io/Delta-Task-1/](https://hibanitt.github.io
 - Move history panel and active power-up HUD
 - Pause/resume and replay flow with game-over modal
 - Sound feedback for core game events
+- Fully responsive
+- Cool animations
 
 ## Gameplay Rules- Quick Summary
 
@@ -45,14 +49,13 @@ Play here: [https://hibanitt.github.io/Delta-Task-1/](https://hibanitt.github.io
 3. After first placement, a player can place only on their own cells.
 4. Cells explode at capacity and distribute pieces to orthogonal neighbors.
 5. Explosions can cascade into chain reactions.
-6. Captured pieces are converted to the current player.
-7. Winner is decided by highest score when game ends.
+6. Winner is decided by highest score when game ends.
 
 ## Tech Stack
 
-- HTML5
-- CSS3
-- JavaScript (ES Modules)
+- HTML
+- CSS
+- JavaScript 
 
 ## Modes finished
 
@@ -89,7 +92,6 @@ Animations: Placing, exploding and bonding of elements within a grid must be ani
 - [script.js](script.js) - Core game loop, UI updates, rules, timers, power-up logic
 - [state-manager.js](state-manager.js) - Initial state creation and board metadata setup
 - [sound-manager.js](sound-manager.js) - Audio asset wiring and playback utility
-- [rules.js](rules.js) - Reserved rules-related module
 - [powerUpIcons/](powerUpIcons/) - Icons for power-ups and UI indicators
 - [sounds/](sounds/) - Audio effects
 
@@ -121,4 +123,10 @@ Live URL:
 
 ## Acknowledgements
 
-Developed by Hiba for Delta Task 1 . Thanks to the Delta Force team for the inspiration.
+Developed by Hiba for Delta Task 1 
+
+Thanks to the Delta Force team for the inspiration.
+
+Hope you guys like it
+
+☆*: .｡. o(≧▽≦)o .｡.:*☆
