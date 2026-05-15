@@ -19,6 +19,23 @@ let state = null;
 // to count the number of explosions
 let reactionScoreContext = null;
 
+const ANIMATION_DURATIONS = {
+  placement: 280,
+  explosion: 160,
+  bond: 140,
+};
+
+const PLAYER_COLORS = {
+  1: "#3b82f6",
+  2: "#ec4899",
+  3: "#22c55e",
+  4: "#eab308",
+  5: "#a855f7",
+  6: "#f97316",
+};
+
+let isResolvingMove = false;
+
 // Track whether each player has made their personal initial placement
 let playedFirstMoveByPlayer = {};
 
@@ -280,6 +297,11 @@ function renderBoard(currentState) {
       const piecesContainer = document.createElement("div");
       piecesContainer.className = "pieces-wrap";
 
+      // to keep count of the number of pieces in the cell for animation
+      if (cellData.count > 1) {
+        piecesContainer.classList.add(`count-${cellData.count}`);
+      }
+
       // Create one circle for each piece in the cell
       for (let j = 0; j < cellData.count; j = j + 1) {
         const piece = document.createElement("span");
@@ -308,232 +330,251 @@ function renderBoard(currentState) {
 
 //   GAME LOGIC AND CLICK HANDLER FUNCTIONS FOR PLACEMENT OF PIECES
 
+//WHY ASYNC?(animations)
+
+// You use async here because your handleBoardClick function may need to wait for asynchronous tasks (like resolving a move, fetching data, or running animations)
+//  without blocking the rest of the app.
+// async allows you to use await inside the function.
+// await pauses execution until a promise finishes, keeping the code clean and sequential.
+
 // Function that handles when a player clicks on a cell
-
-function handleBoardClick(event) {
-  // First Finding  which cell was clicked
-  const clickedCell = event.target.closest(".cell");
-
-  if (!clickedCell) {
-    return; // Click was not on a cell
-  }
-
-  // Don't allow moves if game is over or paused, basically disabling clicks
-  if (state.gameOver || isPaused) {
+async function handleBoardClick(event) {
+  if (isResolvingMove) {
     return;
   }
 
-  if (playerIsEliminated(state.currentPlayer)) {
-    renderBoard(state);
-    endGame(determineWinnerMessage());
-    return;
-  }
+  isResolvingMove = true;
 
-  // Get the row and column of the clicked cell
-  let row = Number(clickedCell.dataset.row);
-  let col = Number(clickedCell.dataset.col);
+  try {
+    // First Finding  which cell was clicked
+    const clickedCell = event.target.closest(".cell");
 
-  console.log(`Clicked cell at row ${row}, col ${col}`);
+    if (!clickedCell) {
+      return; // Click was not on a cell
+    }
 
-  // If Chaos Drift is pending for this player, override their chosen cell
-  const chaosPending =
-    state.powerups &&
-    state.powerups.chaosDrift &&
-    state.powerups.chaosDrift.pendingForPlayer === state.currentPlayer;
-
-  if (chaosPending) {
-    // Pick a random valid cell for this player and ignore the clicked target
-    const valid = getValidCellsForPlayer(state.currentPlayer);
-    if (!valid || valid.length === 0) {
-      // No valid moves available under constraints
-      alert(
-        `No valid cells available for Player ${state.currentPlayer} (Chaos Drift).`,
-      );
+    // Don't allow moves if game is over or paused, basically disabling clicks
+    if (state.gameOver || isPaused) {
       return;
     }
-    const pick = valid[Math.floor(Math.random() * valid.length)];
-    row = pick.row;
-    col = pick.col;
-    state.powerups.chaosDrift.pendingForPlayer = null;
-    showPowerupIcon(
-      "chaosDrift.png",
-      `P${state.currentPlayer} forced to (${row},${col})`,
-      1800,
-    );
-    updatePowerupPanel();
-  }
 
-  // Geting  the cell data from our game state
-  const cellData = state.board[row][col];
+    if (playerIsEliminated(state.currentPlayer)) {
+      renderBoard(state);
+      endGame(determineWinnerMessage());
+      return;
+    }
 
-  //STARTING LOGIC
-  /* - On the very first turn of the game (state.turnsCompleted === 0) a player
-     may place on an empty cell. That placement should add (capacity - 1)
-     pieces into that cell. */
+    // Get the row and column of the clicked cell
+    let row = Number(clickedCell.dataset.row);
+    let col = Number(clickedCell.dataset.col);
 
-  // - After the first turn, players may only click cells they already own.
-  let canPlayHere = false;
-  const isEmpty = cellData.count === 0; //boolean value
-  const isOwner = cellData.owner === state.currentPlayer;
+    console.log(`Clicked cell at row ${row}, col ${col}`);
 
-  //DEALING WITH THE FIRST MOVE
-  if (isEmpty) {
-    // Allow clicking empty cells only if this player hasn't yet made their
-    //initial placement.
-
-    //if its his first move then canplayhere = true
-    canPlayHere = !playedFirstMoveByPlayer[state.currentPlayer];
-  } else {
-    // If the cell has pieces, only allow the owning player to click it
-    //if he is the owner then canplayhere = truw
-    canPlayHere = isOwner;
-  }
-
-  // reactionScoreContext is like a structure with some properties that will help us calculate the score
-
-  if (canPlayHere) {
-    reactionScoreContext = {
-      player: state.currentPlayer,
-      capturedPieces: 0,
-      chainReactions: 0,
-      explosionCount: 0,
-    };
-
-    // Remember if this was a new Fortress Cell claim
-    const wasFortressEmpty = cellData.isFortress && cellData.count === 0;
-
-    // Determine if this is the player's personal first placement
-    const isFirstPlacement =
-      isEmpty && !playedFirstMoveByPlayer[state.currentPlayer];
-
-    // Enforce Lockdown: if this player is targeted by lockdown, prevent
-    // any placement that would reach or exceed capacity
-
-    const lockdownActive =
+    // If Chaos Drift is pending for this player, override their chosen cell
+    const chaosPending =
       state.powerups &&
-      state.powerups.lockdown &&
-      state.powerups.lockdown.player === state.currentPlayer &&
-      state.powerups.lockdown.turnsLeft > 0;
+      state.powerups.chaosDrift &&
+      state.powerups.chaosDrift.pendingForPlayer === state.currentPlayer;
 
-    const increment = getPlacementIncrement(cellData, isFirstPlacement);
-    if (lockdownActive && cellData.count + increment >= cellData.capacity) {
-      //FIXINH THE END GAME LOGIC FOR FORTRESS CELLS
+    if (chaosPending) {
+      // Pick a random valid cell for this player and ignore the clicked target
+      const valid = getValidCellsForPlayer(state.currentPlayer);
+      if (!valid || valid.length === 0) {
+        // No valid moves available under constraints
+        alert(
+          `No valid cells available for Player ${state.currentPlayer} (Chaos Drift).`,
+        );
+        return;
+      }
+      const pick = valid[Math.floor(Math.random() * valid.length)];
+      row = pick.row;
+      col = pick.col;
+      state.powerups.chaosDrift.pendingForPlayer = null;
+      showPowerupIcon(
+        "chaosDrift.png",
+        `P${state.currentPlayer} forced to (${row},${col})`,
+        1800,
+      );
+      updatePowerupPanel();
+    }
 
-      // If the lockdown blocks this placement, check whether the player
-      // has any other valid cells. If not, end the game.
+    // Geting  the cell data from our game state
+    const cellData = state.board[row][col];
 
-      const validCells = getValidCellsForPlayer(state.currentPlayer);
-      if (!validCells || validCells.length === 0) {
+    //STARTING LOGIC
+    /* - On the very first turn of the game (state.turnsCompleted === 0) a player
+       may place on an empty cell. That placement should add (capacity - 1)
+       pieces into that cell. */
+
+    // - After the first turn, players may only click cells they already own.
+    let canPlayHere = false;
+    const isEmpty = cellData.count === 0; //boolean value
+    const isOwner = cellData.owner === state.currentPlayer;
+
+    //DEALING WITH THE FIRST MOVE
+    if (isEmpty) {
+      // Allow clicking empty cells only if this player hasn't yet made their
+      //initial placement.
+
+      //if its his first move then canplayhere = true
+      canPlayHere = !playedFirstMoveByPlayer[state.currentPlayer];
+    } else {
+      // If the cell has pieces, only allow the owning player to click it
+      //if he is the owner then canplayhere = truw
+      canPlayHere = isOwner;
+    }
+
+    // reactionScoreContext is like a structure with some properties that will help us calculate the score
+
+    if (canPlayHere) {
+      reactionScoreContext = {
+        player: state.currentPlayer,
+        capturedPieces: 0,
+        chainReactions: 0,
+        explosionCount: 0,
+      };
+
+      // Remember if this was a new Fortress Cell claim
+      const wasFortressEmpty = cellData.isFortress && cellData.count === 0;
+
+      // Determine if this is the player's personal first placement
+      const isFirstPlacement =
+        isEmpty && !playedFirstMoveByPlayer[state.currentPlayer];
+
+      // Enforce Lockdown: if this player is targeted by lockdown, prevent
+      // any placement that would reach or exceed capacity
+
+      const lockdownActive =
+        state.powerups &&
+        state.powerups.lockdown &&
+        state.powerups.lockdown.player === state.currentPlayer &&
+        state.powerups.lockdown.turnsLeft > 0;
+
+      const increment = getPlacementIncrement(cellData, isFirstPlacement);
+      if (lockdownActive && cellData.count + increment >= cellData.capacity) {
+        //FIXINH THE END GAME LOGIC FOR FORTRESS CELLS
+
+        // If the lockdown blocks this placement, check whether the player
+        // has any other valid cells. If not, end the game.
+
+        const validCells = getValidCellsForPlayer(state.currentPlayer);
+        if (!validCells || validCells.length === 0) {
+          renderBoard(state);
+          endGame(determineWinnerMessage());
+          return;
+        }
+
+        // Otherwise simply block this move and inform the player
+
+        playSound("click");
+        alert(
+          `Player ${state.currentPlayer} is under LOCKDOWN and cannot trigger explosions.`,
+        );
+        return;
+      }
+
+      // Applying the first move
+
+      if (isFirstPlacement) {
+        cellData.owner = state.currentPlayer;
+        cellData.count = Math.max(1, cellData.capacity - 1);
+        playedFirstMoveByPlayer[state.currentPlayer] = true;
+      } else {
+        cellData.owner = state.currentPlayer;
+        cellData.count = cellData.count + 1;
+      }
+      playSound("click");
+      console.log("after move:", { row, col, cell: state.board[row][col] });
+
+      renderBoard(state);
+      await animatePlacement(row, col);
+
+      // Check if player just claimed a Fortress Cell
+      if (wasFortressEmpty) {
+        activateFortressCell(state.currentPlayer, row, col);
+      }
+
+      // Check if the cell is full and needs to explode (normal behavior)
+      //  Lockdown has already prevented a placement that would explode. so no need to worry
+      await explodeCell(row, col, state.currentPlayer);
+
+      // Commit the points earned during this move's reaction chain
+
+      let explosionsThisMove = 0;
+
+      if (
+        reactionScoreContext &&
+        reactionScoreContext.player === state.currentPlayer
+      ) {
+        //SCORING LOGIC -Points are calculated ie, sum of number of pieces captured in a reaction and the number of chain reactions.
+
+        const pointsEarnedThisTurn =
+          reactionScoreContext.capturedPieces +
+          reactionScoreContext.chainReactions;
+
+        //we are accessing the players score array
+        state.scores[state.currentPlayer] =
+          (state.scores[state.currentPlayer] || 0) + pointsEarnedThisTurn;
+
+        // capture explosions count before clearing context so we can award powerups
+        explosionsThisMove = reactionScoreContext.explosionCount || 0;
+      }
+
+      reactionScoreContext = null;
+
+      // Record this move in the Move History
+      // The history shows this completed move until the next move occurs
+      // this is why we add this function to handle click function - to stimulate this function every time
+
+      addMoveToHistory(state.currentPlayer, row, col);
+
+      // Handle turn switching
+      const previousPlayer = state.currentPlayer;
+      handleTurnSwitch();
+
+      // Award power-ups based on exact explosion counts achieved during this move.
+      // If the moving player caused exactly 3 explosions, grant Lockdown against the next player.
+      if (explosionsThisMove === 3) {
+        activateLockdown(previousPlayer, state.currentPlayer);
+      }
+
+      // If the moving player caused exactly 5 explosions, force Chaos Drift on the next player.
+      if (explosionsThisMove === 5) {
+        activateChaosDrift(previousPlayer, state.currentPlayer);
+      }
+
+      // NOTE: lockdown turns are decremented in handleTurnSwitch so they count
+      // even when the targeted player cannot make a placement. See handleTurnSwitch().
+
+      if (playerIsEliminated(state.currentPlayer)) {
         renderBoard(state);
         endGame(determineWinnerMessage());
         return;
       }
 
-      // Otherwise simply block this move and inform the player
+      // Update all displays
+      updatePlayerDisplay();
 
-      playSound("click");
-      alert(
-        `Player ${state.currentPlayer} is under LOCKDOWN and cannot trigger explosions.`,
-      );
-      return;
-    }
+      // Reset the per-move timer for the next player
+      stopMoveTimer();
+      moveTimeLeft = MOVE_DURATION_SECONDS;
+      startMoveTimer();
 
-    // Applying the first move
+      // Check if the new current player can make any moves
+      // MULTIPLAYER: if current player has no pieces left, the game ends
+      if (playerIsEliminated(state.currentPlayer)) {
+        // No moves available - determine winner by highest score
+        // This works for any number of players (2, 3, 4, 5, 6)
+        renderBoard(state);
+        endGame(determineWinnerMessage());
+        return;
+      }
 
-    if (isFirstPlacement) {
-      cellData.owner = state.currentPlayer;
-      cellData.count = Math.max(1, cellData.capacity - 1);
-      playedFirstMoveByPlayer[state.currentPlayer] = true;
-    } else {
-      cellData.owner = state.currentPlayer;
-      cellData.count = cellData.count + 1;
-    }
-    playSound("click");
-    console.log("after move:", { row, col, cell: state.board[row][col] });
-
-    // Check if player just claimed a Fortress Cell
-    if (wasFortressEmpty) {
-      activateFortressCell(state.currentPlayer, row, col);
-    }
-
-    // Check if the cell is full and needs to explode (normal behavior)
-    //  Lockdown has already prevented a placement that would explode. so no need to worry
-    explodeCell(row, col, state.currentPlayer);
-
-    // Commit the points earned during this move's reaction chain
-
-    let explosionsThisMove = 0;
-
-    if (
-      reactionScoreContext &&
-      reactionScoreContext.player === state.currentPlayer
-    ) {
-      //SCORING LOGIC -Points are calculated ie, sum of number of pieces captured in a reaction and the number of chain reactions.
-
-      const pointsEarnedThisTurn =
-        reactionScoreContext.capturedPieces +
-        reactionScoreContext.chainReactions;
-
-      //we are accessing the players score array
-      state.scores[state.currentPlayer] =
-        (state.scores[state.currentPlayer] || 0) + pointsEarnedThisTurn;
-
-      // capture explosions count before clearing context so we can award powerups
-      explosionsThisMove = reactionScoreContext.explosionCount || 0;
-    }
-
-    reactionScoreContext = null;
-
-    // Record this move in the Move History
-    // The history shows this completed move until the next move occurs
-    // this is why we add this function to handle click function - to stimulate this function every time
-
-    addMoveToHistory(state.currentPlayer, row, col);
-
-    // Handle turn switching
-    const previousPlayer = state.currentPlayer;
-    handleTurnSwitch();
-
-    // Award power-ups based on exact explosion counts achieved during this move.
-    // If the moving player caused exactly 3 explosions, grant Lockdown against the next player.
-    if (explosionsThisMove === 3) {
-      activateLockdown(previousPlayer, state.currentPlayer);
-    }
-
-    // If the moving player caused exactly 5 explosions, force Chaos Drift on the next player.
-    if (explosionsThisMove === 5) {
-      activateChaosDrift(previousPlayer, state.currentPlayer);
-    }
-
-    // NOTE: lockdown turns are decremented in handleTurnSwitch so they count
-    // even when the targeted player cannot make a placement. See handleTurnSwitch().
-
-    if (playerIsEliminated(state.currentPlayer)) {
+      // Redraw the board with new state
       renderBoard(state);
-      endGame(determineWinnerMessage());
-      return;
     }
-
-    // Update all displays
-    updatePlayerDisplay();
-
-    // Reset the per-move timer for the next player
-    stopMoveTimer();
-    moveTimeLeft = MOVE_DURATION_SECONDS;
-    startMoveTimer();
-
-    // Check if the new current player can make any moves
-    // MULTIPLAYER: if current player has no pieces left, the game ends
-    if (playerIsEliminated(state.currentPlayer)) {
-      // No moves available - determine winner by highest score
-      // This works for any number of players (2, 3, 4, 5, 6)
-      renderBoard(state);
-      endGame(determineWinnerMessage());
-      return;
-    }
-
-    // Redraw the board with new state
-    renderBoard(state);
+  } finally {
+    isResolvingMove = false;
   }
 }
 
@@ -544,6 +585,70 @@ function getPlacementIncrement(cell, isFirstPlacement) {
   if (isFirstPlacement) return Math.max(1, cell.capacity - 1);
   return 1;
 }
+
+//=========================================================================================================
+
+//ANIMATION FUNCTIONS
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getCellElement(row, col) {
+  return document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+}
+
+function getPlayerColor(player) {
+  return PLAYER_COLORS[player] || PLAYER_COLORS[1];
+}
+
+function animateCellClass(cellElement, className, duration) {
+  if (!cellElement) {
+    return Promise.resolve();
+  }
+
+  cellElement.classList.remove(className);
+  void cellElement.offsetWidth;
+  cellElement.classList.add(className);
+
+  return wait(duration).then(() => {
+    cellElement.classList.remove(className);
+  });
+}
+
+function animatePlacement(row, col) {
+  const cellElement = getCellElement(row, col);
+  animateCellClass(cellElement, "place-animate", ANIMATION_DURATIONS.placement);
+
+  const pieces = cellElement?.querySelectorAll(".piece") || [];
+  pieces.forEach((piece, index) => {
+    piece.classList.remove("piece-pop");
+    piece.style.animationDelay = `${index * 70}ms`;
+    piece.classList.add("piece-pop");
+    setTimeout(
+      () => {
+        piece.classList.remove("piece-pop");
+        piece.style.animationDelay = "";
+      },
+      ANIMATION_DURATIONS.placement + index * 70 + 50,
+    );
+  });
+
+  return Promise.resolve();
+}
+
+function animateBonding(row, col) {
+  const cellElement = getCellElement(row, col);
+  return animateCellClass(
+    cellElement,
+    "bond-animate",
+    ANIMATION_DURATIONS.bond,
+  );
+}
+
+//==========================================================================================================
+
+//HELPER FUNCTIONS
 
 // Get a list of valid cells (row/col objects) where `player` may place.
 // This respects the game's first-placement rule and also Lockdown restrictions.
@@ -627,7 +732,7 @@ function handleTurnSwitch() {
     }
   }
 }
-
+//=============================================================================================================
 //   EVENT LISTENERS FOR BUTTONS
 
 // Add listener for the restart button
@@ -654,7 +759,7 @@ if (pauseBtn) {
 // Function that checks if a cell is full and needs to explode
 // If the cell has reached its capacity, it explodes
 
-function explodeCell(row, col, currentPlayer, allowTeleport = true) {
+async function explodeCell(row, col, currentPlayer, allowTeleport = true) {
   const currentCell = state.board[row][col];
 
   // Check if the cell has reached its capacity limit
@@ -662,16 +767,74 @@ function explodeCell(row, col, currentPlayer, allowTeleport = true) {
     return; // Not full yet, don't explode
   }
 
+  const cellDOM = getCellElement(row, col);
+
+  //waiting until this function is called- so we use await
+  await animateExplosionParticles(cellDOM, currentPlayer);
+
   // Cell is full - try to activate row ripper if active
   activateRowRipper(row, currentPlayer);
 
   // Trigger the explosion at this cell
-  triggerExplosionAt(row, col, currentPlayer, allowTeleport);
+  await triggerExplosionAt(row, col, currentPlayer, allowTeleport);
+}
+
+// ANIMATION
+
+function animateExplosionParticles(cellDOM, currentPlayer) {
+  if (!cellDOM) return Promise.resolve();
+
+  const particleCount = 8;
+  const blastRadius = 50; // Distance particles travel in pixels
+  const playerColor = getPlayerColor(currentPlayer);
+  const animations = [];
+
+  for (let i = 0; i < particleCount; i++) {
+    const shard = document.createElement("div");
+    shard.className = "explosion-shard";
+    shard.style.backgroundColor = playerColor;
+    shard.style.boxShadow = `0 0 8px ${playerColor}`;
+
+    cellDOM.appendChild(shard);
+
+    // Calculate angular trajectories (Orthogonal + Diagonal vectors)
+    const angle = (i / particleCount) * Math.PI * 2;
+    const targetX = Math.cos(angle) * blastRadius;
+    const targetY = Math.sin(angle) * blastRadius;
+
+    const animation = shard.animate(
+      [
+        {
+          transform: "translate(-50%, -50%) scale(1)",
+          opacity: 1,
+        },
+        {
+          transform: `translate(calc(-50% + ${targetX}px), calc(-50% + ${targetY}px)) scale(0.12)`,
+          opacity: 0,
+        },
+      ],
+      {
+        duration: ANIMATION_DURATIONS.explosion,
+        easing: "cubic-bezier(0.1, 0.8, 0.25, 1)",
+        fill: "forwards",
+      },
+    );
+
+    animations.push(
+      animation.finished
+        .catch(() => {})
+        .then(() => {
+          shard.remove();
+        }),
+    );
+  }
+
+  return Promise.all(animations).then(() => undefined);
 }
 
 // Function that makes a cell explode and spread pieces to neighbors
 
-function triggerExplosionAt(row, col, currentPlayer, allowTeleport) {
+async function triggerExplosionAt(row, col, currentPlayer, allowTeleport) {
   const currentCell = state.board[row][col];
   const isFortressExplosion = currentCell.isFortress;
 
@@ -700,8 +863,15 @@ function triggerExplosionAt(row, col, currentPlayer, allowTeleport) {
     currentCell.count = 0;
     currentCell.owner = null;
 
+    renderBoard(state);
+    await animateCellClass(
+      getCellElement(row, col),
+      "explosion-animate",
+      ANIMATION_DURATIONS.explosion,
+    );
+
     // Trigger explosion at the teleport destination
-    triggerExplosionAt(targetRow, targetCol, currentPlayer, false);
+    await triggerExplosionAt(targetRow, targetCol, currentPlayer, false);
     return;
   }
 
@@ -710,52 +880,87 @@ function triggerExplosionAt(row, col, currentPlayer, allowTeleport) {
   currentCell.count = 0;
   currentCell.owner = null;
 
-  // Spread pieces to all 4 neighbors (up, down, left, right)
-  spreadToNeighbor(row - 1, col, currentPlayer); // Spread up
-  spreadToNeighbor(row + 1, col, currentPlayer); // Spread down
-  spreadToNeighbor(row, col - 1, currentPlayer); // Spread left
-  spreadToNeighbor(row, col + 1, currentPlayer); // Spread right
+  renderBoard(state);
+  await animateCellClass(
+    getCellElement(row, col),
+    "explosion-animate",
+    ANIMATION_DURATIONS.explosion,
+  );
+
+  // Spread pieces to all 4 neighbors as a single wave
+  await spreadToNeighbors(row, col, currentPlayer);
 }
 
 // Function that handles what happens when pieces spread to neighboring cells
 // This is called after a cell explodes to add pieces to adjacent cells
 
-function spreadToNeighbor(row, col, currentPlayer) {
-  // Make sure the neighboring cell is on the board
-  if (row < 0 || row >= 12 || col < 0 || col >= 6) {
-    return; // Out of bounds, can't spread here
+async function spreadToNeighbors(row, col, currentPlayer) {
+  const targets = [
+    { row: row - 1, col },
+    { row: row + 1, col },
+    { row, col: col - 1 },
+    { row, col: col + 1 },
+  ];
+
+  const impactedCells = [];
+
+  for (const target of targets) {
+    if (
+      target.row < 0 ||
+      target.row >= 12 ||
+      target.col < 0 ||
+      target.col >= 6
+    ) {
+      continue;
+    }
+
+    const neighbor = state.board[target.row][target.col];
+    const fortressOwnedByOther =
+      neighbor.isFortress &&
+      neighbor.owner !== null &&
+      neighbor.owner !== currentPlayer;
+
+    if (fortressOwnedByOther) {
+      continue;
+    }
+
+    if (
+      reactionScoreContext &&
+      reactionScoreContext.player === currentPlayer &&
+      neighbor.owner !== null &&
+      neighbor.owner !== currentPlayer
+    ) {
+      reactionScoreContext.capturedPieces =
+        reactionScoreContext.capturedPieces + neighbor.count;
+    }
+
+    const previousOwner = neighbor.owner;
+    neighbor.owner = currentPlayer;
+    neighbor.count = neighbor.count + 1;
+    impactedCells.push({ row: target.row, col: target.col, previousOwner });
   }
 
-  const neighbor = state.board[row][col];
-
-  // Check if this is a Fortress Cell that belongs to the other player
-
-  const isFortress = neighbor.isFortress;
-
-  //to avoid capturing the contents of fortress cell if in case they belong to the other player
-  const fortressOwnedByOther =
-    isFortress && neighbor.owner !== null && neighbor.owner !== currentPlayer;
-
-  if (fortressOwnedByOther) {
+  if (impactedCells.length === 0) {
     return;
   }
 
-  if (
-    reactionScoreContext &&
-    reactionScoreContext.player === currentPlayer &&
-    neighbor.owner !== null &&
-    neighbor.owner !== currentPlayer
-  ) {
-    reactionScoreContext.capturedPieces =
-      reactionScoreContext.capturedPieces + neighbor.count;
-  }
+  renderBoard(state);
 
-  // Add one piece from the current player to this neighbor
-  neighbor.owner = currentPlayer;
-  neighbor.count = neighbor.count + 1;
+  await Promise.all(
+    impactedCells.map(({ row: targetRow, col: targetCol, previousOwner }) => {
+      if (previousOwner !== currentPlayer) {
+        return animateBonding(targetRow, targetCol);
+      }
 
-  // Check if the neighbor cell now needs to explode too
-  explodeCell(row, col, currentPlayer);
+      return animatePlacement(targetRow, targetCol);
+    }),
+  );
+
+  await Promise.all(
+    impactedCells.map(({ row: targetRow, col: targetCol }) =>
+      explodeCell(targetRow, targetCol, currentPlayer),
+    ),
+  );
 }
 
 //=============================================================================================================

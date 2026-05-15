@@ -333,8 +333,8 @@ button:hover {
 }
 
 .piece {
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: inline-block;
   border: 2px solid rgba(255, 255, 255, 0.92);
@@ -1509,5 +1509,235 @@ button:hover {
   .piece {
     width: 10px;
     height: 10px;
+  }
+}
+
+/* =========================
+   Animations - hacker ++
+   ========================= */
+
+/* PLACING PIECE ANIMATION */
+
+.piece-pop {
+  animation: elasticPop 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center;
+}
+
+.pieces-wrap.count-4 {
+  animation: spinOrbit 1.4s linear infinite;
+}
+
+.cell.place-animate {
+  animation: place-cell-pulse 0.46s ease-out;
+}
+
+.cell.explosion-animate {
+  animation: explosion-cell-burst 0.16s cubic-bezier(0.1, 0.8, 0.25, 1);
+}
+
+.cell.bond-animate {
+  animation: bond-cell-surge 0.22s ease-out;
+}
+
+.explosion-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+@keyframes elasticPop {
+  0% {
+    transform: scale(0.35);
+    opacity: 0;
+    filter: brightness(1.3);
+  }
+  55% {
+    transform: scale(1.32); /* Overtravel scale for structural weight */
+    opacity: 1;
+    filter: brightness(1.55);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+@keyframes place-cell-pulse {
+  0% {
+    transform: scale(0.88);
+    box-shadow:
+      0 0 0 0 rgba(96, 165, 250, 0.34),
+      inset 0 0 0 0 rgba(255, 255, 255, 0);
+    filter: brightness(1);
+  }
+  45% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 0 14px rgba(96, 165, 250, 0.14),
+      inset 0 0 20px rgba(255, 255, 255, 0.18);
+    filter: brightness(1.18);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 0 rgba(96, 165, 250, 0),
+      inset 0 0 0 0 rgba(255, 255, 255, 0);
+    filter: brightness(1);
+  }
+}
+
+@keyframes explosion-cell-burst {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  45% {
+    transform: scale(1.14);
+    filter: brightness(1.5);
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.45);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes bond-cell-surge {
+  0% {
+    transform: scale(0.96);
+    filter: saturate(1);
+  }
+  45% {
+    transform: scale(1.03);
+    filter: saturate(1.2) brightness(1.1);
+  }
+  100% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+}
+
+/* ANIMATING BONDING  */
+
+/* ORBITAL LAYOUTS */
+
+/* When 2 Atoms are there : Balanced horizontal spin */
+.pieces-wrap.count-2 {
+  animation: spinOrbit 3s linear infinite;
+}
+.pieces-wrap.count-2 .piece:nth-child(1) {
+  transform: translateX(-10px);
+}
+.pieces-wrap.count-2 .piece:nth-child(2) {
+  transform: translateX(10px);
+}
+
+/* When 3 Atoms are there : Rapid delta triangle  */
+.pieces-wrap.count-3 {
+  display: block;
+  width: 68px;
+  height: 68px;
+  flex-wrap: nowrap;
+  animation:
+    triOrbit 2.8s linear infinite,
+    triClusterPulse 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+.pieces-wrap.count-3 .piece {
+  position: absolute;
+  animation: triDotGlow 1.8s ease-in-out infinite;
+}
+.pieces-wrap.count-3 .piece:nth-child(1) {
+  top: 14px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: 0s;
+}
+.pieces-wrap.count-3 .piece:nth-child(2) {
+  top: 48px;
+  left: 18px;
+  transform: translate(-50%, -50%);
+  animation-delay: 0.2s;
+}
+.pieces-wrap.count-3 .piece:nth-child(3) {
+  top: 48px;
+  left: 50px;
+  transform: translate(-50%, -50%);
+  animation-delay: 0.4s;
+}
+
+@keyframes spinOrbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes triOrbit {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.04);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes triClusterPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.16));
+  }
+}
+
+@keyframes triDotGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(15, 23, 42, 0.55),
+      0 0 10px rgba(255, 255, 255, 0.12);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(15, 23, 42, 0.55),
+      0 0 18px rgba(255, 255, 255, 0.32);
+    opacity: 1;
+  }
+}
+
+/* Animating Exploding */
+
+@media (prefers-reduced-motion: reduce) {
+  .piece-pop,
+  .cell.place-animate,
+  .cell.explosion-animate,
+  .cell.bond-animate,
+  .pieces-wrap.count-2,
+  .pieces-wrap.count-3,
+  .pieces-wrap.count-4,
+  .cell.teleport-pulse,
+  .cell.fortress-cell,
+  .cell.fortress-pulse,
+  .cell.row-ripper-pulse,
+  #transitionFx.active {
+    animation: none !important;
+    transition: none !important;
   }
 }
